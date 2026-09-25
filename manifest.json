@@ -1,6 +1,6 @@
 {
-  "name": "Nexus AI Commerce",
-  "short_name": "NexusCommerce",
+  "name": "E-commerce Shoping",
+  "short_name": "EcommerceShoping",
   "description": "Next-Gen AI Commerce Storefront and Automated Supplier Management Platform",
   "start_url": "./index.html",
   "display": "standalone",
