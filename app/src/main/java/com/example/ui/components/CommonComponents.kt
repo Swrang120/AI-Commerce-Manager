@@ -32,7 +32,8 @@ fun StoreTopBar(
     wishlistCount: Int,
     currentTab: CustomerTab,
     onNavigateTab: (CustomerTab) -> Unit,
-    onSwitchToAdmin: () -> Unit
+    onSwitchToAdmin: () -> Unit,
+    onOpenMenu: () -> Unit
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surface,
@@ -47,10 +48,14 @@ fun StoreTopBar(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.clickable { onNavigateTab(CustomerTab.SHOP) }
-                ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onOpenMenu) {
+                        Icon(Icons.Default.Menu, contentDescription = "Menu")
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { onNavigateTab(CustomerTab.SHOP) }
+                    ) {
                     Box(
                         modifier = Modifier
                             .size(36.dp)
@@ -166,7 +171,8 @@ fun AdminTopBar(
     title: String,
     supabaseStatus: SupabaseClient.SupabaseStatus?,
     onSwitchToStore: () -> Unit,
-    onTestSupabase: () -> Unit
+    onTestSupabase: () -> Unit,
+    onOpenMenu: () -> Unit
 ) {
     Surface(
         color = Slate900,
@@ -184,6 +190,9 @@ fun AdminTopBar(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onOpenMenu) {
+                        Icon(Icons.Default.Menu, contentDescription = "Menu", tint = Color.White)
+                    }
                     Box(
                         modifier = Modifier
                             .size(34.dp)
