@@ -259,6 +259,9 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+    }
+}
+
 @Composable
 fun CommerceDrawer(
     viewMode: AppViewMode,
