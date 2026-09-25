@@ -157,7 +157,7 @@ class ShopifyProvider(private val httpClient: OkHttpClient) : ProductSourceProvi
             try {
                 val req = Request.Builder()
                     .url(jsonUrl)
-                    .header("User-Agent", "NexusAICommerce/1.0")
+                    .header("User-Agent", "ECommerceShoping/1.0")
                     .get()
                     .build()
                 val resp = httpClient.newCall(req).execute()
