@@ -86,6 +86,7 @@ class MainActivity : ComponentActivity() {
                                     AdminTab.MARKETING -> "Marketing & Social"
                                     AdminTab.AUTOMATION -> "Automation Rules"
                                     AdminTab.AI_CENTER -> "AI Intelligence Center"
+                                    AdminTab.AI_VIDEOS -> "AI Product Videos"
                                     AdminTab.PROFIT -> "Profit Analytics"
                                     AdminTab.COUPONS -> "Coupons & Discounts"
                                     AdminTab.REVIEWS -> "Customer Reviews"
@@ -191,6 +192,9 @@ class MainActivity : ComponentActivity() {
                                     AdminTab.AI_CENTER -> AdminAiCenterScreen(
                                         viewModel = viewModel
                                     )
+                                    AdminTab.AI_VIDEOS -> AdminVideoStudioScreen(
+                                        viewModel = viewModel
+                                    )
                                     AdminTab.PROFIT -> ProfitScreen(
                                         viewModel = viewModel
                                     )
@@ -281,7 +285,7 @@ fun AdminBottomNavigation(
                 )
             )
             NavigationBarItem(
-                selected = currentTab == AdminTab.AUTOMATION || currentTab == AdminTab.AI_CENTER || currentTab == AdminTab.RESEARCH,
+                selected = currentTab == AdminTab.AUTOMATION || currentTab == AdminTab.AI_CENTER || currentTab == AdminTab.AI_VIDEOS || currentTab == AdminTab.RESEARCH,
                 onClick = { onTabSelected(AdminTab.AUTOMATION) },
                 icon = { Icon(imageVector = Icons.Default.AutoAwesome, contentDescription = "Automation") },
                 label = { Text("Automation", fontSize = 11.sp) },
@@ -322,6 +326,7 @@ fun AdminBottomNavigation(
             Triple(AdminTab.MARKETING, "Marketing Campaigns", Icons.Default.Campaign),
             Triple(AdminTab.AUTOMATION, "Automation Rules", Icons.Default.PlayCircleOutline),
             Triple(AdminTab.AI_CENTER, "AI Intelligence", Icons.Default.Psychology),
+            Triple(AdminTab.AI_VIDEOS, "AI Product Videos", Icons.Default.VideoLibrary),
             Triple(AdminTab.PROFIT, "Profit Statement", Icons.Default.TrendingUp),
             Triple(AdminTab.COUPONS, "Coupons & Codes", Icons.Default.Discount),
             Triple(AdminTab.REVIEWS, "Customer Reviews", Icons.Default.RateReview),

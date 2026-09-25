@@ -133,8 +133,12 @@
             <span id="cartCountBadge" class="hidden absolute -top-1 -right-1 bg-brand-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">0</span>
           </button>
 
-          <!-- Settings / Credentials -->
-          <button onclick="openSettingsModal()" title="Database & Credentials Settings" class="p-2 text-slate-400 hover:text-white transition rounded-lg hover:bg-slate-800">
+          <!-- Customer Account -->
+          <button onclick="openCustomerAuth()" id="customerAuthBtn" title="Login / Signup" class="px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/80 rounded-lg border border-slate-700 transition">
+            Account
+          </button>
+          <!-- Admin-only Backend Settings -->
+          <button onclick="openSettingsModal()" id="backendSettingsBtn" title="Admin backend settings" class="hidden p-2 text-slate-400 hover:text-white transition rounded-lg hover:bg-slate-800">
             <i data-lucide="settings" class="w-5 h-5"></i>
           </button>
         </div>
@@ -257,6 +261,10 @@
         <button onclick="switchAdminTab('reviews')" id="tab-reviews" class="admin-tab-btn px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">Review Moderation</button>
         <button onclick="switchAdminTab('coupons')" id="tab-coupons" class="admin-tab-btn px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">Coupons</button>
         <button onclick="switchAdminTab('automations')" id="tab-automations" class="admin-tab-btn px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">Automation Runs</button>
+        <button onclick="switchAdminTab('hunter')" id="tab-hunter" class="admin-tab-btn px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">AI Product Hunter</button>
+        <button onclick="switchAdminTab('pricing')" id="tab-pricing" class="admin-tab-btn px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">Pricing & Margin</button>
+        <button onclick="switchAdminTab('videos')" id="tab-videos" class="admin-tab-btn px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">AI Videos</button>
+        <button onclick="switchAdminTab('autopilot')" id="tab-autopilot" class="admin-tab-btn px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">Autopilot</button>
       </div>
 
       <!-- Tab 1: Overview -->
@@ -848,12 +856,75 @@
     </div>
   </div>
 
+
+  <!-- ================= CUSTOMER AUTH ================= -->
+  <div id="customerAuthModal" class="fixed inset-0 z-[65] hidden items-center justify-center p-4">
+    <div class="fixed inset-0 bg-black/80 backdrop-blur-sm" onclick="closeCustomerAuth()"></div>
+    <div class="relative w-full max-w-md bg-dark-card border border-dark-border rounded-2xl p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-5">
+        <div>
+          <h3 id="customerAuthTitle" class="text-xl font-bold text-white">Welcome</h3>
+          <p id="customerAuthSubtitle" class="text-xs text-slate-400 mt-1">Login to manage your orders and profile.</p>
+        </div>
+        <button onclick="closeCustomerAuth()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form id="customerLoginForm" onsubmit="customerLogin(event)" class="space-y-3">
+        <input id="customerLoginEmail" type="email" required placeholder="Gmail / Email" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white">
+        <input id="customerLoginPassword" type="password" required placeholder="Password" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white">
+        <p id="customerAuthError" class="hidden text-xs text-rose-400"></p>
+        <button id="customerLoginBtn" class="w-full py-2.5 bg-brand-600 rounded-xl text-sm font-bold text-white">Login</button>
+        <div class="flex justify-between text-xs">
+          <button type="button" onclick="showCustomerSignup()" class="text-brand-400">Create account</button>
+          <button type="button" onclick="showCustomerForgot()" class="text-slate-400">Forgot password?</button>
+        </div>
+      </form>
+      <form id="customerSignupForm" onsubmit="customerSignup(event)" class="hidden space-y-3">
+        <input id="customerSignupName" type="text" required placeholder="Full Name" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white">
+        <input id="customerSignupEmail" type="email" required placeholder="Gmail / Email" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white">
+        <input id="customerSignupPassword" type="password" minlength="6" required placeholder="Password" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white">
+        <input id="customerSignupConfirm" type="password" minlength="6" required placeholder="Confirm Password" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white">
+        <p id="customerSignupMessage" class="hidden text-xs"></p>
+        <button class="w-full py-2.5 bg-brand-600 rounded-xl text-sm font-bold text-white">Create Account</button>
+        <button type="button" onclick="showCustomerLogin()" class="w-full py-2 text-xs text-slate-400">Back to Login</button>
+      </form>
+      <form id="customerForgotForm" onsubmit="sendCustomerReset(event)" class="hidden space-y-3">
+        <input id="customerForgotEmail" type="email" required placeholder="Your Gmail / Email" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white">
+        <p id="customerForgotMessage" class="hidden text-xs"></p>
+        <button class="w-full py-2.5 bg-brand-600 rounded-xl text-sm font-bold text-white">Send Reset Email</button>
+        <button type="button" onclick="showCustomerLogin()" class="w-full py-2 text-xs text-slate-400">Back to Login</button>
+      </form>
+      <form id="customerResetForm" onsubmit="updateCustomerPassword(event)" class="hidden space-y-3">
+        <input id="customerNewPassword" type="password" minlength="6" required placeholder="New Password" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white">
+        <input id="customerNewPasswordConfirm" type="password" minlength="6" required placeholder="Confirm New Password" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white">
+        <p id="customerResetMessage" class="hidden text-xs"></p>
+        <button class="w-full py-2.5 bg-emerald-600 rounded-xl text-sm font-bold text-white">Set New Password</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= ADMIN LOGIN ================= -->
+  <div id="adminLoginModal" class="fixed inset-0 z-[70] hidden items-center justify-center p-4">
+    <div class="fixed inset-0 bg-black/80 backdrop-blur-sm" onclick="closeAdminLogin()"></div>
+    <div class="relative w-full max-w-md bg-dark-card border border-dark-border rounded-2xl p-6 shadow-2xl">
+      <div class="flex items-center gap-3 mb-5">
+        <div class="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center"><i data-lucide="shield-check" class="w-5 h-5 text-amber-400"></i></div>
+        <div><h3 class="font-bold text-white">Admin Dashboard Login</h3><p class="text-xs text-slate-400">Supabase Auth + profile role verification</p></div>
+      </div>
+      <form onsubmit="adminLogin(event)" class="space-y-3">
+        <input id="adminLoginEmail" type="email" required placeholder="Admin email" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white">
+        <input id="adminLoginPassword" type="password" required placeholder="Password" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white">
+        <p id="adminLoginError" class="hidden text-xs text-rose-400"></p>
+        <button id="adminLoginBtn" type="submit" class="w-full py-2.5 bg-brand-600 hover:bg-brand-500 rounded-xl text-sm font-bold text-white">Sign in to Dashboard</button>
+      </form>
+    </div>
+  </div>
+
   <!-- ================= JAVASCRIPT APPLICATION CORE ================= -->
   <script>
     // Configuration
     const DEFAULT_CONFIG = {
-      supabaseUrl: 'https://widwrwsjiqbkqpzmuiwe.supabase.co',
-      supabaseKey: 'sb_publishable_YNkkAqGbQOImfGN9O3kzzw_i37CDrWY',
+      supabaseUrl: 'https://eklycpnfnyjydrgxdnzm.supabase.co',
+      supabaseKey: 'sb_publishable_NUt0MMWF-50fcrWCL5Nq-g_OX3FGqVf',
       razorpayPageUrl: 'https://razorpay.me/@santiramswargiary'
     };
 
@@ -871,6 +942,16 @@
       }
     } catch (e) {
       console.warn("Supabase init error:", e);
+    }
+
+    if (supabaseClient) {
+      supabaseClient.auth.onAuthStateChange((event, session) => {
+        customerSession = session;
+        if (event === 'PASSWORD_RECOVERY') {
+          openCustomerAuth();
+          showCustomerReset();
+        }
+      });
     }
 
     // Curated catalog matching database schema
@@ -950,6 +1031,9 @@
     let selectedCategory = 'All';
     let currentModalProduct = null;
     let isAdminMode = false;
+    let adminSession = null;
+    let adminProfile = null;
+    let customerSession = null;
 
     // Guest Session ID (Requirement 33)
     let guestSessionId = localStorage.getItem('nexus_guest_session_id');
@@ -966,6 +1050,15 @@
       updateCartUI();
       updateWishlistUI();
       initAdminData();
+
+      const portal = new URLSearchParams(window.location.search).get('portal');
+      if (portal === 'admin' || portal === 'automation') {
+        setTimeout(() => toggleAdminView(), 250);
+        setTimeout(() => {
+          if (portal === 'automation') switchAdminTab('autopilot');
+          else switchAdminTab('overview');
+        }, 500);
+      }
     });
 
     // ================= PRODUCT CATALOG & FILTERING =================
@@ -977,18 +1070,18 @@
       try {
         const { data, error } = await supabaseClient
           .from('products')
-          .select('*')
+          .select('id,name,slug,description,short_description,selling_price,compare_at_price,stock_quantity,images,tags,categories(name)')
           .eq('status', 'active');
         if (!error && data && data.length > 0) {
           storeProducts = data.map(p => ({
             id: p.id,
             name: p.name,
             slug: p.slug,
-            category: p.category_name || 'Electronics',
-            price: Number(p.price),
-            compare_at_price: Number(p.compare_at_price || p.price * 1.4),
-            stock_quantity: p.stock_quantity || 15,
-            image_url: p.primary_image || INITIAL_PRODUCTS[0].image_url,
+            category: p.categories?.name || 'Electronics',
+            price: Number(p.selling_price || 0),
+            compare_at_price: Number(p.compare_at_price || p.selling_price || 0),
+            stock_quantity: Number(p.stock_quantity || 0),
+            image_url: Array.isArray(p.images) && p.images.length ? p.images[0] : INITIAL_PRODUCTS[0].image_url,
             short_description: p.short_description || p.description || ''
           }));
         }
@@ -1636,7 +1729,22 @@
     }
 
     // ================= ADMIN PORTAL OPERATIONS =================
-    function toggleAdminView() {
+    async function toggleAdminView() {
+      if (!isAdminMode) {
+        const { data } = supabaseClient ? await supabaseClient.auth.getSession() : { data: { session: null } };
+        if (!data.session) {
+          document.getElementById('adminLoginModal').classList.remove('hidden');
+          document.getElementById('adminLoginModal').classList.add('flex');
+          return;
+        }
+        const { data: profile } = await supabaseClient.from('profiles').select('role,full_name,email').eq('id', data.session.user.id).maybeSingle();
+        if (!profile || !['admin','manager'].includes(profile.role)) {
+          alert('This account does not have admin/manager access.');
+          return;
+        }
+        adminSession = data.session;
+        adminProfile = profile;
+      }
       isAdminMode = !isAdminMode;
       const custView = document.getElementById('customerView');
       const adminView = document.getElementById('adminView');
@@ -1647,15 +1755,202 @@
         custView.classList.add('hidden');
         adminView.classList.remove('hidden');
         searchBox.classList.add('hidden');
+        document.getElementById('backendSettingsBtn')?.classList.remove('hidden');
+        document.getElementById('customerAuthBtn')?.classList.add('hidden');
         toggleText.innerText = "Switch to Customer Storefront";
         loadAdminDashboard();
       } else {
         custView.classList.remove('hidden');
         adminView.classList.add('hidden');
         searchBox.classList.remove('hidden');
+        document.getElementById('backendSettingsBtn')?.classList.add('hidden');
+        document.getElementById('customerAuthBtn')?.classList.remove('hidden');
         toggleText.innerText = "Switch to Admin Portal";
       }
       lucide.createIcons();
+      if (isAdminMode) {
+        loadAdminDashboard();
+        loadVideoJobs();
+        loadAutopilotProducts();
+      }
+    }
+
+    function openCustomerAuth() {
+      const modal=document.getElementById('customerAuthModal');
+      modal.classList.remove('hidden'); modal.classList.add('flex');
+      showCustomerLogin();
+    }
+    function closeCustomerAuth() {
+      const modal=document.getElementById('customerAuthModal');
+      modal.classList.add('hidden'); modal.classList.remove('flex');
+    }
+    function setAuthPanel(title, subtitle, panelId) {
+      document.getElementById('customerAuthTitle').textContent=title;
+      document.getElementById('customerAuthSubtitle').textContent=subtitle;
+      ['customerLoginForm','customerSignupForm','customerForgotForm','customerResetForm'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+      document.getElementById(panelId).classList.remove('hidden');
+      document.getElementById('customerAuthError')?.classList.add('hidden');
+      lucide.createIcons();
+    }
+    function showCustomerLogin(){setAuthPanel('Welcome back','Login to manage your orders and profile.','customerLoginForm');}
+    function showCustomerSignup(){setAuthPanel('Create account','Sign up with your name, Gmail/email and password.','customerSignupForm');}
+    function showCustomerForgot(){setAuthPanel('Reset password','We will send a secure password-reset email.','customerForgotForm');}
+    function showCustomerReset(){setAuthPanel('Set new password','Choose a new password for your account.','customerResetForm');}
+
+    async function customerLogin(event){
+      event.preventDefault();
+      const btn=document.getElementById('customerLoginBtn'); btn.disabled=true; btn.textContent='Logging in…';
+      const err=document.getElementById('customerAuthError');
+      try{
+        if(!supabaseClient) throw new Error('Supabase is not available.');
+        const email=document.getElementById('customerLoginEmail').value.trim();
+        const password=document.getElementById('customerLoginPassword').value;
+        const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
+        if(error) throw error;
+        customerSession=data.session;
+        const profile=await ensureCustomerProfile(data.user);
+        if(profile?.role && ['admin','manager'].includes(profile.role)){
+          // Keep customer login available, but admin controls remain protected behind Admin Portal.
+        }
+        document.getElementById('customerAuthBtn').textContent=profile?.full_name ? profile.full_name.split(' ')[0] : 'Account';
+        closeCustomerAuth();
+        fetchSupabaseProducts();
+      }catch(e){err.textContent=e.message||'Login failed.';err.classList.remove('hidden');}
+      finally{btn.disabled=false;btn.textContent='Login';}
+    }
+
+    async function customerSignup(event){
+      event.preventDefault();
+      const name=document.getElementById('customerSignupName').value.trim();
+      const email=document.getElementById('customerSignupEmail').value.trim();
+      const password=document.getElementById('customerSignupPassword').value;
+      const confirm=document.getElementById('customerSignupConfirm').value;
+      const msg=document.getElementById('customerSignupMessage');
+      msg.classList.remove('hidden');
+      if(password!==confirm){msg.className='text-xs text-rose-400';msg.textContent='Passwords do not match.';return;}
+      try{
+        if(!supabaseClient) throw new Error('Supabase is not available.');
+        const {data,error}=await supabaseClient.auth.signUp({email,password,options:{data:{full_name:name}}});
+        if(error) throw error;
+        if(data.user && data.session) await ensureCustomerProfile(data.user,name);
+        msg.className='text-xs text-emerald-400';
+        msg.textContent=data.session ? 'Account created successfully.' : 'Account created. Check your Gmail/email for the verification link.';
+        if(data.session){setTimeout(closeCustomerAuth,700);}
+      }catch(e){msg.className='text-xs text-rose-400';msg.textContent=e.message||'Signup failed.';}
+    }
+
+    async function sendCustomerReset(event){
+      event.preventDefault();
+      const email=document.getElementById('customerForgotEmail').value.trim();
+      const msg=document.getElementById('customerForgotMessage'); msg.classList.remove('hidden');
+      try{
+        if(!supabaseClient) throw new Error('Supabase is not available.');
+        const redirectTo=window.location.origin+window.location.pathname;
+        const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo});
+        if(error) throw error;
+        msg.className='text-xs text-emerald-400'; msg.textContent='Password reset email sent. Open it from your Gmail/email.';
+      }catch(e){msg.className='text-xs text-rose-400';msg.textContent=e.message||'Could not send reset email.';}
+    }
+
+    async function updateCustomerPassword(event){
+      event.preventDefault();
+      const p=document.getElementById('customerNewPassword').value;
+      const cp=document.getElementById('customerNewPasswordConfirm').value;
+      const msg=document.getElementById('customerResetMessage'); msg.classList.remove('hidden');
+      if(p!==cp){msg.className='text-xs text-rose-400';msg.textContent='Passwords do not match.';return;}
+      try{
+        const {error}=await supabaseClient.auth.updateUser({password:p});
+        if(error) throw error;
+        msg.className='text-xs text-emerald-400'; msg.textContent='Password updated. You can now login with the new password.';
+        setTimeout(showCustomerLogin,800);
+      }catch(e){msg.className='text-xs text-rose-400';msg.textContent=e.message||'Password update failed.';}
+    }
+
+    async function ensureCustomerProfile(user, fallbackName=''){
+      const name=fallbackName || user.user_metadata?.full_name || '';
+      const {data:existing}=await supabaseClient.from('profiles').select('id,full_name,email,role').eq('id',user.id).maybeSingle();
+      if(existing) return existing;
+      // Profile creation is normally handled by the database signup trigger; this fallback helps if the trigger is not installed.
+      const {data,error}=await supabaseClient.from('profiles').insert({id:user.id,email:user.email,full_name:name,role:'customer'}).select('id,full_name,email,role').single();
+      if(error) return null;
+      return data;
+    }
+
+        function closeAdminLogin() {
+      const m=document.getElementById('adminLoginModal');
+      m.classList.add('hidden'); m.classList.remove('flex');
+    }
+
+    async function adminLogin(event) {
+      event.preventDefault();
+      const email=document.getElementById('adminLoginEmail').value.trim();
+      const password=document.getElementById('adminLoginPassword').value;
+      const err=document.getElementById('adminLoginError');
+      const btn=document.getElementById('adminLoginBtn');
+      err.classList.add('hidden'); btn.disabled=true; btn.textContent='Signing in…';
+      try {
+        if (!supabaseClient) throw new Error('Supabase is not available.');
+        const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
+        if(error) throw error;
+        const {data:profile,error:profileError}=await supabaseClient.from('profiles').select('role,full_name,email').eq('id',data.user.id).maybeSingle();
+        if(profileError) throw profileError;
+        if(!profile || !['admin','manager'].includes(profile.role)) {
+          await supabaseClient.auth.signOut();
+          throw new Error('Account authenticated, but its profile role is not admin/manager.');
+        }
+        adminSession=data.session; adminProfile=profile; closeAdminLogin();
+        if(!isAdminMode) toggleAdminView();
+      } catch(e) {
+        err.textContent=e.message || 'Login failed.'; err.classList.remove('hidden');
+      } finally { btn.disabled=false; btn.textContent='Sign in to Dashboard'; }
+    }
+
+    async function loadVideoJobs() {
+      const list=document.getElementById('videoJobsList'); if(!list || !supabaseClient) return;
+      const {data,error}=await supabaseClient.from('video_jobs').select('*').order('created_at',{ascending:false}).limit(50);
+      if(error){list.innerHTML='<div class="p-4 bg-rose-500/10 text-rose-300 rounded-xl text-sm">'+error.message+'</div>';return;}
+      list.innerHTML=(data||[]).map(j=>`<div class="p-4 bg-dark-card border border-dark-border rounded-xl"><div class="flex justify-between gap-3"><div><b>${j.title}</b><div class="text-xs text-slate-400 mt-1">${j.generation_status} · ${j.aspect_ratio}</div></div><div class="flex gap-2">${j.video_url?`<a class="px-3 py-1 bg-slate-800 rounded-lg text-xs" href="${j.video_url}" target="_blank">Preview</a>`:''}<button onclick="generateVideoJob('${j.id}')" class="px-3 py-1 bg-brand-600 rounded-lg text-xs">Generate</button></div></div></div>`).join('') || '<div class="text-sm text-slate-500">No video jobs yet.</div>';
+    }
+
+    async function queueSelectedVideo() {
+      const id=document.getElementById('videoProductSelect')?.value; const p=storeProducts.find(x=>x.id===id);
+      if(!p) return alert('Select a product first.');
+      const {error}=await supabaseClient.from('video_jobs').insert({product_id:p.id,created_by:adminSession.user.id,title:p.name+' — Product Video',description:p.short_description||'',generation_prompt:'Premium ecommerce product video using only verified product facts. No fake claims, reviews, or copyrighted material.',aspect_ratio:document.getElementById('videoAspect').value,resolution:'1080p',duration_seconds:30,generation_status:'queued'});
+      if(error) alert(error.message); else { alert('Video job queued.'); loadVideoJobs(); }
+    }
+
+    async function generateVideoJob(id) {
+      if(!adminSession) return alert('Admin session required.');
+      const {data,error}=await supabaseClient.functions.invoke('video-generator',{body:{job_id:id}});
+      if(error) alert(error.message); else { alert(data?.ok?'Video generation completed/submitted.':'Generation response received.'); loadVideoJobs(); }
+    }
+
+    function loadAutopilotProducts() {
+      const box=document.getElementById('autopilotProducts'); if(!box) return;
+      box.innerHTML=storeProducts.map(p=>`<div class="p-4 bg-slate-900/60 border border-slate-800 rounded-xl flex flex-col md:flex-row md:items-center md:justify-between gap-3"><div><b>${p.name}</b><div class="text-xs text-slate-400">Price ₹${Number(p.price||0).toLocaleString('en-IN')} · Stock ${p.stock_quantity??0}</div></div><label class="text-xs flex items-center gap-2"><input type="checkbox" onchange="saveAutopilot('${p.id}',this.checked)"> Enable AI Autopilot</label></div>`).join('');
+      const sel=document.getElementById('videoProductSelect'); if(sel) sel.innerHTML=storeProducts.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+    }
+
+    async function saveAutopilot(productId,enabled) {
+      const payload={product_id:productId,enabled,updated_by:adminSession?.user?.id};
+      const {error}=await supabaseClient.from('product_autopilot_settings').upsert(payload,{onConflict:'product_id'});
+      if(error) alert(error.message);
+    }
+
+    async function runProductHunter() {
+      const q=document.getElementById('hunterQuery').value.trim()||'general ecommerce products';
+      const box=document.getElementById('hunterResults');
+      box.innerHTML='<div class="p-4 bg-dark-card border border-dark-border rounded-xl text-sm text-slate-400">Research record created. Connect an authorized supplier/feed source for live candidate discovery.</div>';
+      const {error}=await supabaseClient.from('product_hunter_runs').insert({query:q,source:'manual_research',product_name:q,status:'researching',ai_reason:'Awaiting authorized supplier/feed data.'});
+      if(error) box.innerHTML='<div class="p-4 bg-rose-500/10 text-rose-300 rounded-xl text-sm">'+error.message+'</div>';
+    }
+
+    function calculateSellingPrice() {
+      const cost=Number(document.getElementById('priceCost').value)||0, shipping=Number(document.getElementById('priceShipping').value)||0, fixed=Number(document.getElementById('priceFixedFee').value)||0;
+      const fee=(Number(document.getElementById('pricePlatformFee').value)||0)/100, margin=(Number(document.getElementById('priceMargin').value)||0)/100;
+      const denom=1-fee-margin; const result=document.getElementById('pricingResult');
+      if(denom<=0){result.textContent='Invalid: platform fee + margin must be below 100%';return;}
+      result.textContent='Recommended selling price: ₹'+((cost+shipping+fixed)/denom).toFixed(2);
     }
 
     function switchAdminTab(tabKey) {

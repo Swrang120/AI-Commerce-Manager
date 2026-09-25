@@ -60,8 +60,8 @@ Default setup me pre-configured Supabase project connect hota hai. Aap `.env` fi
 
 ```env
 # Supabase Configuration
-SUPABASE_URL=https://widwrwsjiqbkqpzmuiwe.supabase.co
-SUPABASE_ANON_KEY=sb_publishable_YNkkAqGbQOImfGN9O3kzzw_i37CDrWY
+SUPABASE_URL=https://eklycpnfnyjydrgxdnzm.supabase.co
+SUPABASE_ANON_KEY=sb_publishable_NUt0MMWF-50fcrWCL5Nq-g_OX3FGqVf
 
 # Razorpay Configuration
 RAZORPAY_PAGE_URL=https://razorpay.me/@santiramswargiary
