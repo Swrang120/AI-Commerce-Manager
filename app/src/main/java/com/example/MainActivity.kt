@@ -53,7 +53,32 @@ class MainActivity : ComponentActivity() {
                 val selectedProduct by viewModel.selectedProduct.collectAsState()
                 val snackbarHostState = remember { SnackbarHostState() }
                 val coroutineScope = rememberCoroutineScope()
+                val drawerState = rememberDrawerState(DrawerValue.Closed)
 
+                ModalNavigationDrawer(
+                    drawerState = drawerState,
+                    drawerContent = {
+                        CommerceDrawer(
+                            viewMode = viewMode,
+                            customerTab = customerTab,
+                            adminTab = adminTab,
+                            onCustomerTab = {
+                                viewModel.setCustomerTab(it)
+                                coroutineScope.launch { drawerState.close() }
+                            },
+                            onAdminTab = {
+                                viewModel.setAdminTab(it)
+                                coroutineScope.launch { drawerState.close() }
+                            },
+                            onSwitchMode = {
+                                viewModel.setViewMode(it) { msg ->
+                                    coroutineScope.launch { snackbarHostState.showSnackbar(msg) }
+                                }
+                                coroutineScope.launch { drawerState.close() }
+                            }
+                        )
+                    }
+                ) {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -64,6 +89,7 @@ class MainActivity : ComponentActivity() {
                                 wishlistCount = wishlistIds.size,
                                 currentTab = customerTab,
                                 onNavigateTab = { viewModel.setCustomerTab(it) },
+                                onOpenMenu = { coroutineScope.launch { drawerState.open() } },
                                 onSwitchToAdmin = {
                                     viewModel.setViewMode(AppViewMode.ADMIN) { msg ->
                                         coroutineScope.launch {
@@ -95,7 +121,8 @@ class MainActivity : ComponentActivity() {
                                 },
                                 supabaseStatus = supabaseStatus,
                                 onSwitchToStore = { viewModel.setViewMode(AppViewMode.CUSTOMER) },
-                                onTestSupabase = { viewModel.testSupabase() }
+                                onTestSupabase = { viewModel.testSupabase() },
+                                onOpenMenu = { coroutineScope.launch { drawerState.open() } }
                             )
                         }
                     },
@@ -143,6 +170,9 @@ class MainActivity : ComponentActivity() {
                                     CustomerTab.WISHLIST -> CustomerWishlistScreen(
                                         viewModel = viewModel,
                                         onProductClick = { viewModel.selectProduct(it) }
+                                    )
+                                    CustomerTab.VIDEOS -> CustomerVideoLibraryScreen(
+                                        viewModel = viewModel
                                     )
                                     CustomerTab.ACCOUNT -> CustomerAccountScreen(
                                         viewModel = viewModel,
@@ -224,6 +254,94 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
+            }
+        }
+    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CommerceDrawer(
+    viewMode: AppViewMode,
+    customerTab: CustomerTab,
+    adminTab: AdminTab,
+    onCustomerTab: (CustomerTab) -> Unit,
+    onAdminTab: (AdminTab) -> Unit,
+    onSwitchMode: (AppViewMode) -> Unit
+) {
+    ModalDrawerSheet {
+        Column(modifier = Modifier.fillMaxHeight().padding(vertical = 16.dp)) {
+            Text(
+                if (viewMode == AppViewMode.ADMIN) "AI Commerce Admin" else "AI Commerce Store",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
+            )
+            Divider()
+            if (viewMode == AppViewMode.CUSTOMER) {
+                val items = listOf(
+                    CustomerTab.SHOP to "Home",
+                    CustomerTab.CATEGORIES to "Categories",
+                    CustomerTab.SEARCH to "Search",
+                    CustomerTab.WISHLIST to "Wishlist",
+                    CustomerTab.VIDEOS to "AI Product Videos",
+                    CustomerTab.CART to "Cart",
+                    CustomerTab.ORDERS to "My Orders",
+                    CustomerTab.ACCOUNT to "Profile & Settings"
+                )
+                items.forEach { (tab, label) ->
+                    NavigationDrawerItem(
+                        label = { Text(label) },
+                        selected = customerTab == tab,
+                        onClick = { onCustomerTab(tab) },
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
+                    )
+                }
+                Divider(modifier = Modifier.padding(vertical = 8.dp))
+                NavigationDrawerItem(
+                    label = { Text("Admin Panel") },
+                    selected = false,
+                    onClick = { onSwitchMode(AppViewMode.ADMIN) },
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
+                )
+            } else {
+                val items = listOf(
+                    AdminTab.DASHBOARD to "Home / Dashboard",
+                    AdminTab.PRODUCTS to "Products",
+                    AdminTab.RESEARCH to "Product Research",
+                    AdminTab.IMPORT to "AI Product Import",
+                    AdminTab.SUPPLIERS to "Suppliers",
+                    AdminTab.ORDERS to "Orders",
+                    AdminTab.SHIPMENTS to "Shipments",
+                    AdminTab.PAYMENTS to "Payments",
+                    AdminTab.AI_VIDEOS to "AI Video Studio",
+                    AdminTab.MARKETING to "Marketing",
+                    AdminTab.AUTOMATION to "Automation",
+                    AdminTab.AI_CENTER to "AI Intelligence",
+                    AdminTab.PROFIT to "Analytics / Earnings",
+                    AdminTab.COUPONS to "Coupons",
+                    AdminTab.REVIEWS to "Reviews",
+                    AdminTab.ACTIVITY to "Activity Logs",
+                    AdminTab.SETTINGS to "Settings"
+                )
+                items.forEach { (tab, label) ->
+                    NavigationDrawerItem(
+                        label = { Text(label) },
+                        selected = adminTab == tab,
+                        onClick = { onAdminTab(tab) },
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
+                    )
+                }
+                Divider(modifier = Modifier.padding(vertical = 8.dp))
+                NavigationDrawerItem(
+                    label = { Text("Customer Store") },
+                    selected = false,
+                    onClick = { onSwitchMode(AppViewMode.CUSTOMER) },
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
+                )
             }
         }
     }
