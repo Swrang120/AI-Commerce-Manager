@@ -21,8 +21,8 @@ import java.util.concurrent.TimeUnit
 
 class SupabaseClient(context: Context? = null) {
     private val tag = "SupabaseClient"
-    val supabaseUrl = BuildConfig.SUPABASE_URL.ifBlank { "https://widwrwsjiqbkqpzmuiwe.supabase.co" }
-    val supabaseAnonKey = BuildConfig.SUPABASE_ANON_KEY.ifBlank { "sb_publishable_YNkkAqGbQOImfGN9O3kzzw_i37CDrWY" }
+    val supabaseUrl = BuildConfig.SUPABASE_URL.ifBlank { "https://eklycpnfnyjydrgxdnzm.supabase.co" }
+    val supabaseAnonKey = BuildConfig.SUPABASE_ANON_KEY.ifBlank { "sb_publishable_NUt0MMWF-50fcrWCL5Nq-g_OX3FGqVf" }
 
     private val prefs = context?.getSharedPreferences("nexus_supabase_session", Context.MODE_PRIVATE)
 
@@ -131,7 +131,7 @@ class SupabaseClient(context: Context? = null) {
 
             SupabaseStatus(
                 isConnected = authOk || restCode in 200..499,
-                message = if (authOk) "Connected to Supabase Project: widwrwsjiqbkqpzmuiwe" else "Connection ready",
+                message = if (authOk) "Connection ready" else "Connection ready",
                 tableStatus = tableStatus
             )
         } catch (e: Exception) {
