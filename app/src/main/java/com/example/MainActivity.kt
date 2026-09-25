@@ -260,7 +260,6 @@ class MainActivity : ComponentActivity() {
 }
 
     }
-}
 
 @Composable
 fun CommerceDrawer(
