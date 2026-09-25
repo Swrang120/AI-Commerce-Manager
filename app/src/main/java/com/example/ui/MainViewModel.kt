@@ -8,6 +8,7 @@ import com.example.data.remote.GeminiService
 import com.example.data.remote.ImportResult
 import com.example.data.remote.NormalizedProductImport
 import com.example.data.remote.SupabaseClient
+import com.example.data.remote.VideoRepository
 import com.example.data.repository.CommerceRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -21,7 +22,7 @@ enum class AdminTab {
 }
 
 enum class CustomerTab {
-    SHOP, CATEGORIES, SEARCH, CART, ORDERS, WISHLIST, ACCOUNT
+    SHOP, CATEGORIES, SEARCH, CART, ORDERS, WISHLIST, VIDEOS, ACCOUNT
 }
 
 data class ProfitSummary(
@@ -135,6 +136,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val automationRuns: StateFlow<List<AutomationRun>> = repository.allAutomationRuns
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    private val videoRepository = VideoRepository(repository.supabaseClient)
+    private val _publicVideos = MutableStateFlow<List<VideoJob>>(emptyList())
+    val publicVideos: StateFlow<List<VideoJob>> = _publicVideos.asStateFlow()
+    private val _videoLoading = MutableStateFlow(false)
+    val videoLoading: StateFlow<Boolean> = _videoLoading.asStateFlow()
+
     // Profit Calculations Derived Flow
     val profitSummary: StateFlow<ProfitSummary> = orders.map { orderList ->
         var rev = 0.0
@@ -164,6 +171,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         testSupabase()
+        loadPublicVideos()
+    }
+
+    fun loadPublicVideos() {
+        viewModelScope.launch {
+            _videoLoading.value = true
+            runCatching { videoRepository.listPublicJobs() }
+                .onSuccess { _publicVideos.value = it }
+                .also { _videoLoading.value = false }
+        }
     }
 
     // Role-based view switching
