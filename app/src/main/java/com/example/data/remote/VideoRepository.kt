@@ -31,6 +31,18 @@ class VideoRepository(private val client: SupabaseClient) {
         }
     }
 
+    suspend fun listPublicJobs(): List<VideoJob> = withContext(Dispatchers.IO) {
+        val req = headers(
+            Request.Builder().url(
+                client.supabaseUrl + "/rest/v1/video_jobs?select=*&is_public=eq.true&generation_status=eq.published&order=published_at.desc&limit=50"
+            )
+        ).get().build()
+        http.newCall(req).execute().use { response ->
+            if (!response.isSuccessful) error("Public video jobs HTTP " + response.code)
+            parseJobs(response.body?.string().orEmpty())
+        }
+    }
+
     suspend fun createJob(productId: String?, title: String, description: String, prompt: String, aspectRatio: String = "9:16"): VideoJob =
         withContext(Dispatchers.IO) {
             val json = JSONObject().apply {
