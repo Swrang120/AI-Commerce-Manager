@@ -268,7 +268,7 @@ data class ProductResearch(
 @JsonClass(generateAdapter = true)
 data class StoreSettings(
     val id: String = UUID.randomUUID().toString(),
-    @Json(name = "store_name") val storeName: String = "Nexus AI Commerce",
+    @Json(name = "store_name") val storeName: String = "E-commerce Shoping",
     val currency: String = "INR",
     @Json(name = "razorpay_enabled") val razorpayEnabled: Boolean = true,
     @Json(name = "razorpay_page_url") val razorpayPageUrl: String = "https://razorpay.me/@santiramswargiary",
