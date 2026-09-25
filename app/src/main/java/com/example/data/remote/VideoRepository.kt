@@ -9,6 +9,9 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class VideoRepository(private val client: SupabaseClient) {
     private val http = OkHttpClient()
@@ -62,7 +65,7 @@ class VideoRepository(private val client: SupabaseClient) {
     }
 
     suspend fun publish(jobId: String, publish: Boolean): Boolean = withContext(Dispatchers.IO) {
-        val body = JSONObject().put("is_public", publish).put("published_at", if (publish) java.time.Instant.now().toString() else JSONObject.NULL)
+        val body = JSONObject().put("is_public", publish).put("published_at", if (publish) SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).format(Date()) else JSONObject.NULL)
             .toString().toRequestBody("application/json".toMediaType())
         val req = headers(Request.Builder().url(client.supabaseUrl + "/rest/v1/video_jobs?id=eq." + jobId))
             .patch(body).build()
