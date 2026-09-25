@@ -162,6 +162,7 @@ fun StoreTopBar(
                     }
                 }
             }
+                }
         }
     }
 }
