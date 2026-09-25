@@ -32,9 +32,9 @@ import com.example.ui.components.AdminTopBar
 import com.example.ui.components.CustomerBottomNav
 import com.example.ui.components.StoreTopBar
 import com.example.ui.customer.*
-import com.example.ui.theme.Indigo600
-import com.example.ui.theme.MyApplicationTheme
-import com.example.ui.theme.Slate900
+import com.example.ui.theme.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.ui.window.Dialog
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -81,11 +81,16 @@ class MainActivity : ComponentActivity() {
                                     AdminTab.RESEARCH -> "AI Product Lab"
                                     AdminTab.SUPPLIERS -> "Supplier Directory"
                                     AdminTab.ORDERS -> "Orders & Fulfillment"
+                                    AdminTab.SHIPMENTS -> "Shipments & Tracking"
+                                    AdminTab.PAYMENTS -> "Verified Payments"
                                     AdminTab.MARKETING -> "Marketing & Social"
                                     AdminTab.AUTOMATION -> "Automation Rules"
+                                    AdminTab.AI_CENTER -> "AI Intelligence Center"
                                     AdminTab.PROFIT -> "Profit Analytics"
+                                    AdminTab.COUPONS -> "Coupons & Discounts"
+                                    AdminTab.REVIEWS -> "Customer Reviews"
+                                    AdminTab.ACTIVITY -> "Activity Logs"
                                     AdminTab.SETTINGS -> "Store Settings"
-                                    else -> "Admin Center"
                                 },
                                 supabaseStatus = supabaseStatus,
                                 onSwitchToStore = { viewModel.setViewMode(AppViewMode.CUSTOMER) },
@@ -171,22 +176,35 @@ class MainActivity : ComponentActivity() {
                                     AdminTab.ORDERS -> AdminOrdersScreen(
                                         viewModel = viewModel
                                     )
+                                    AdminTab.SHIPMENTS -> AdminShipmentsScreen(
+                                        viewModel = viewModel
+                                    )
+                                    AdminTab.PAYMENTS -> AdminPaymentsScreen(
+                                        viewModel = viewModel
+                                    )
                                     AdminTab.MARKETING -> MarketingScreen(
                                         viewModel = viewModel
                                     )
                                     AdminTab.AUTOMATION -> AutomationScreen(
                                         viewModel = viewModel
                                     )
+                                    AdminTab.AI_CENTER -> AdminAiCenterScreen(
+                                        viewModel = viewModel
+                                    )
                                     AdminTab.PROFIT -> ProfitScreen(
+                                        viewModel = viewModel
+                                    )
+                                    AdminTab.COUPONS -> AdminCouponsScreen(
+                                        viewModel = viewModel
+                                    )
+                                    AdminTab.REVIEWS -> AdminReviewsScreen(
+                                        viewModel = viewModel
+                                    )
+                                    AdminTab.ACTIVITY -> AdminActivityScreen(
                                         viewModel = viewModel
                                     )
                                     AdminTab.SETTINGS -> SettingsScreen(
                                         viewModel = viewModel
-                                    )
-                                    else -> AdminDashboardScreen(
-                                        viewModel = viewModel,
-                                        onNavigateTab = { viewModel.setAdminTab(it) },
-                                        onSelectOrder = { viewModel.setAdminTab(AdminTab.ORDERS) }
                                     )
                                 }
                             }
@@ -212,55 +230,162 @@ fun AdminBottomNavigation(
     currentTab: AdminTab,
     onTabSelected: (AdminTab) -> Unit
 ) {
+    var showAllModulesDialog by remember { mutableStateOf(false) }
+
     Surface(
         color = Slate900,
         tonalElevation = 8.dp,
         modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars)
     ) {
-        val tabs = listOf(
+        NavigationBar(
+            containerColor = Slate900,
+            tonalElevation = 0.dp
+        ) {
+            NavigationBarItem(
+                selected = currentTab == AdminTab.DASHBOARD,
+                onClick = { onTabSelected(AdminTab.DASHBOARD) },
+                icon = { Icon(imageVector = Icons.Default.Dashboard, contentDescription = "Dashboard") },
+                label = { Text("Overview", fontSize = 11.sp) },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = Color.White,
+                    selectedTextColor = Color.White,
+                    indicatorColor = Indigo600,
+                    unselectedIconColor = Slate400,
+                    unselectedTextColor = Slate400
+                )
+            )
+            NavigationBarItem(
+                selected = currentTab == AdminTab.PRODUCTS || currentTab == AdminTab.IMPORT,
+                onClick = { onTabSelected(AdminTab.PRODUCTS) },
+                icon = { Icon(imageVector = Icons.Default.Inventory2, contentDescription = "Products") },
+                label = { Text("Catalog", fontSize = 11.sp) },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = Color.White,
+                    selectedTextColor = Color.White,
+                    indicatorColor = Indigo600,
+                    unselectedIconColor = Slate400,
+                    unselectedTextColor = Slate400
+                )
+            )
+            NavigationBarItem(
+                selected = currentTab == AdminTab.ORDERS || currentTab == AdminTab.SHIPMENTS,
+                onClick = { onTabSelected(AdminTab.ORDERS) },
+                icon = { Icon(imageVector = Icons.Default.LocalShipping, contentDescription = "Orders") },
+                label = { Text("Orders", fontSize = 11.sp) },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = Color.White,
+                    selectedTextColor = Color.White,
+                    indicatorColor = Indigo600,
+                    unselectedIconColor = Slate400,
+                    unselectedTextColor = Slate400
+                )
+            )
+            NavigationBarItem(
+                selected = currentTab == AdminTab.AUTOMATION || currentTab == AdminTab.AI_CENTER || currentTab == AdminTab.RESEARCH,
+                onClick = { onTabSelected(AdminTab.AUTOMATION) },
+                icon = { Icon(imageVector = Icons.Default.AutoAwesome, contentDescription = "Automation") },
+                label = { Text("Automation", fontSize = 11.sp) },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = Color.White,
+                    selectedTextColor = Color.White,
+                    indicatorColor = Indigo600,
+                    unselectedIconColor = Slate400,
+                    unselectedTextColor = Slate400
+                )
+            )
+            NavigationBarItem(
+                selected = showAllModulesDialog || (currentTab !in listOf(AdminTab.DASHBOARD, AdminTab.PRODUCTS, AdminTab.ORDERS, AdminTab.AUTOMATION)),
+                onClick = { showAllModulesDialog = true },
+                icon = { Icon(imageVector = Icons.Default.Menu, contentDescription = "More") },
+                label = { Text("More", fontSize = 11.sp) },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = Color.White,
+                    selectedTextColor = Color.White,
+                    indicatorColor = Indigo600,
+                    unselectedIconColor = Slate400,
+                    unselectedTextColor = Slate400
+                )
+            )
+        }
+    }
+
+    if (showAllModulesDialog) {
+        val allModules = listOf(
             Triple(AdminTab.DASHBOARD, "Dashboard", Icons.Default.Dashboard),
-            Triple(AdminTab.PRODUCTS, "Products", Icons.Default.Inventory2),
-            Triple(AdminTab.IMPORT, "Import", Icons.Default.CloudDownload),
-            Triple(AdminTab.RESEARCH, "AI Lab", Icons.Default.AutoAwesome),
-            Triple(AdminTab.ORDERS, "Orders", Icons.Default.LocalShipping),
-            Triple(AdminTab.MARKETING, "Marketing", Icons.Default.Campaign),
-            Triple(AdminTab.AUTOMATION, "Rules", Icons.Default.PlayCircleOutline),
-            Triple(AdminTab.PROFIT, "Profit", Icons.Default.TrendingUp),
+            Triple(AdminTab.PRODUCTS, "Product Catalog", Icons.Default.Inventory2),
+            Triple(AdminTab.IMPORT, "Supplier Import", Icons.Default.CloudDownload),
+            Triple(AdminTab.RESEARCH, "AI Product Lab", Icons.Default.AutoAwesome),
             Triple(AdminTab.SUPPLIERS, "Suppliers", Icons.Default.Business),
-            Triple(AdminTab.SETTINGS, "Settings", Icons.Default.Settings)
+            Triple(AdminTab.ORDERS, "Orders & Routing", Icons.Default.ReceiptLong),
+            Triple(AdminTab.SHIPMENTS, "Shipments & Tracking", Icons.Default.LocalShipping),
+            Triple(AdminTab.PAYMENTS, "Verified Payments", Icons.Default.CurrencyRupee),
+            Triple(AdminTab.MARKETING, "Marketing Campaigns", Icons.Default.Campaign),
+            Triple(AdminTab.AUTOMATION, "Automation Rules", Icons.Default.PlayCircleOutline),
+            Triple(AdminTab.AI_CENTER, "AI Intelligence", Icons.Default.Psychology),
+            Triple(AdminTab.PROFIT, "Profit Statement", Icons.Default.TrendingUp),
+            Triple(AdminTab.COUPONS, "Coupons & Codes", Icons.Default.Discount),
+            Triple(AdminTab.REVIEWS, "Customer Reviews", Icons.Default.RateReview),
+            Triple(AdminTab.ACTIVITY, "Activity Audit", Icons.Default.History),
+            Triple(AdminTab.SETTINGS, "Store Settings", Icons.Default.Settings)
         )
 
-        LazyRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 6.dp, horizontal = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            items(tabs) { (tab, label, icon) ->
-                val isSelected = currentTab == tab
-                Surface(
-                    color = if (isSelected) Indigo600 else Color.Transparent,
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.clickable { onTabSelected(tab) }
-                ) {
+        Dialog(onDismissRequest = { showAllModulesDialog = false }) {
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 8.dp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 24.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = label,
-                            tint = if (isSelected) Color.White else Color(0xFF94A3B8),
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = label,
-                            fontSize = 11.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            color = if (isSelected) Color.White else Color(0xFF94A3B8)
-                        )
+                        Text(text = "All Admin Modules (16)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        IconButton(onClick = { showAllModulesDialog = false }) {
+                            Icon(imageVector = Icons.Default.Close, contentDescription = "Close")
+                        }
+                    }
+                    Divider(color = Slate200, modifier = Modifier.padding(vertical = 8.dp))
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.heightIn(max = 420.dp)
+                    ) {
+                        items(allModules) { (tab, label, icon) ->
+                            val isSelected = currentTab == tab
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (isSelected) Indigo50 else Color.Transparent,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        onTabSelected(tab)
+                                        showAllModulesDialog = false
+                                    }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = icon,
+                                        contentDescription = null,
+                                        tint = if (isSelected) Indigo600 else Slate600,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Text(
+                                        text = label,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (isSelected) Indigo600 else Slate800,
+                                        fontSize = 14.sp
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }

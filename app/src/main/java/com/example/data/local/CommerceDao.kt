@@ -158,4 +158,17 @@ interface CommerceDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCoupons(coupons: List<CouponEntity>)
+
+    // Automation Runs
+    @Query("SELECT * FROM automation_runs ORDER BY ranAt DESC LIMIT 50")
+    fun getAutomationRuns(): Flow<List<AutomationRunEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAutomationRun(run: AutomationRunEntity)
+
+    @Query("SELECT * FROM orders")
+    suspend fun getOrdersSync(): List<OrderEntity>
+
+    @Query("SELECT * FROM products")
+    suspend fun getProductsSync(): List<ProductEntity>
 }

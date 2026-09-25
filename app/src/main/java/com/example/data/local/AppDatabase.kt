@@ -19,9 +19,10 @@ import androidx.room.RoomDatabase
         ActivityLogEntity::class,
         NotificationEntity::class,
         ProductReviewEntity::class,
-        CouponEntity::class
+        CouponEntity::class,
+        AutomationRunEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

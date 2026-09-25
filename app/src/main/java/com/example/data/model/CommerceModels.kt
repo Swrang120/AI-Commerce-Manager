@@ -240,9 +240,14 @@ data class AutomationRun(
     val id: String = UUID.randomUUID().toString(),
     @Json(name = "rule_id") val ruleId: String? = null,
     @Json(name = "rule_name") val ruleName: String = "",
-    val status: String = "success", // success, failed, running
-    @Json(name = "log_output") val logOutput: String,
-    @Json(name = "ran_at") val ranAt: String
+    val status: String = "running", // running, success, failed, cancelled
+    @Json(name = "input_data") val inputData: String? = null,
+    @Json(name = "output_data") val outputData: String? = null,
+    @Json(name = "error_message") val errorMessage: String? = null,
+    @Json(name = "log_output") val logOutput: String = "",
+    @Json(name = "started_at") val startedAt: String? = null,
+    @Json(name = "completed_at") val completedAt: String? = null,
+    @Json(name = "ran_at") val ranAt: String = ""
 )
 
 @JsonClass(generateAdapter = true)
@@ -303,15 +308,42 @@ data class ProductReview(
     @Json(name = "product_id") val productId: String,
     @Json(name = "customer_id") val customerId: String? = null,
     @Json(name = "order_id") val orderId: String? = null,
-    @Json(name = "author_name") val authorName: String = "Verified Customer",
+    @Json(name = "author_name") val authorName: String = "Customer",
     val rating: Int,
     val title: String? = null,
     val review: String = "",
     val comment: String = "",
-    @Json(name = "is_verified_purchase") val isVerifiedPurchase: Boolean = true,
-    @Json(name = "verified_purchase") val verifiedPurchase: Boolean = true,
-    @Json(name = "is_published") val isPublished: Boolean = true,
-    val status: String = "published",
+    @Json(name = "is_verified_purchase") val isVerifiedPurchase: Boolean = false,
+    @Json(name = "verified_purchase") val verifiedPurchase: Boolean = false,
+    @Json(name = "is_published") val isPublished: Boolean = false,
+    val status: String = "pending", // pending, published, rejected
+    @Json(name = "created_at") val createdAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class RemoteCart(
+    val id: String = UUID.randomUUID().toString(),
+    @Json(name = "customer_id") val customerId: String? = null,
+    @Json(name = "session_token") val sessionToken: String? = null,
+    @Json(name = "created_at") val createdAt: String? = null,
+    @Json(name = "updated_at") val updatedAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class RemoteCartItem(
+    val id: String = UUID.randomUUID().toString(),
+    @Json(name = "cart_id") val cartId: String,
+    @Json(name = "product_id") val productId: String,
+    val quantity: Int = 1,
+    val price: Double = 0.0,
+    @Json(name = "created_at") val createdAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class RemoteWishlistItem(
+    val id: String = UUID.randomUUID().toString(),
+    @Json(name = "customer_id") val customerId: String,
+    @Json(name = "product_id") val productId: String,
     @Json(name = "created_at") val createdAt: String? = null
 )
 

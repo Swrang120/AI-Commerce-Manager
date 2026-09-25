@@ -175,3 +175,18 @@ data class CouponEntity(
     val minOrderAmount: Double,
     val isActive: Boolean
 )
+
+@Entity(tableName = "automation_runs")
+data class AutomationRunEntity(
+    @PrimaryKey val id: String,
+    val ruleId: String?,
+    val ruleName: String,
+    val status: String,
+    val inputData: String?,
+    val outputData: String?,
+    val errorMessage: String?,
+    val logOutput: String,
+    val startedAt: String?,
+    val completedAt: String?,
+    val ranAt: String
+)

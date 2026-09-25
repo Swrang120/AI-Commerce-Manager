@@ -132,6 +132,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val coupons: StateFlow<List<Coupon>> = repository.activeCoupons
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val automationRuns: StateFlow<List<AutomationRun>> = repository.allAutomationRuns
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     // Profit Calculations Derived Flow
     val profitSummary: StateFlow<ProfitSummary> = orders.map { orderList ->
         var rev = 0.0
@@ -213,6 +216,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 onSuccess = { profile ->
                     _currentUser.value = profile
                     _authErrorMessage.value = null
+                    repository.supabaseClient.mergeGuestCartOnLogin(profile.id)
+                    repository.syncFromSupabase()
                     onResult(true, "Welcome back, ${profile.fullName}!")
                 },
                 onFailure = { err ->
@@ -229,7 +234,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             res.fold(
                 onSuccess = { msg ->
                     _authErrorMessage.value = null
-                    _currentUser.value = repository.supabaseClient.currentProfile
+                    val profile = repository.supabaseClient.currentProfile
+                    _currentUser.value = profile
+                    if (profile != null) {
+                        repository.supabaseClient.mergeGuestCartOnLogin(profile.id)
+                    }
+                    repository.syncFromSupabase()
                     onResult(true, msg)
                 },
                 onFailure = { err ->
@@ -270,13 +280,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun applyCoupon(code: String) {
-        val found = coupons.value.find { it.code.equals(code.trim(), ignoreCase = true) }
-        if (found != null) {
-            _appliedCoupon.value = found
-            _couponMessage.value = "Coupon '${found.code}' applied successfully!"
-        } else {
-            _appliedCoupon.value = null
-            _couponMessage.value = "Invalid or expired coupon code."
+        viewModelScope.launch {
+            val trimmed = code.trim()
+            if (trimmed.isBlank()) {
+                _appliedCoupon.value = null
+                _couponMessage.value = "Please enter a coupon code."
+                return@launch
+            }
+            val subtotal = cartItems.value.sumOf { it.price * it.quantity }
+            val res = repository.supabaseClient.validateCouponRemote(trimmed, subtotal)
+            if (res.isSuccess) {
+                val coupon = res.getOrThrow()
+                _appliedCoupon.value = coupon
+                val desc = if (coupon.discountType == "percentage") "${coupon.discountValue.toInt()}% off" else "₹${coupon.discountValue.toInt()} off"
+                _couponMessage.value = "Coupon '${coupon.code}' applied ($desc)!"
+            } else {
+                _appliedCoupon.value = null
+                _couponMessage.value = res.exceptionOrNull()?.message ?: "Invalid or expired coupon."
+            }
         }
     }
 
@@ -286,24 +307,32 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         customerPhone: String,
         address: String,
         paymentMethod: String = "Razorpay",
-        onOrderCreated: ((Order) -> Unit)? = null
+        onOrderCreated: ((Order) -> Unit)? = null,
+        onError: ((String) -> Unit)? = null
     ) {
         viewModelScope.launch {
             val items = cartItems.value
-            if (items.isEmpty()) return@launch
-            val order = repository.placeOrder(
-                customerName = customerName,
-                customerEmail = customerEmail,
-                customerPhone = customerPhone,
-                address = address,
-                items = items,
-                appliedCoupon = _appliedCoupon.value,
-                paymentMethod = paymentMethod
-            )
-            _appliedCoupon.value = null
-            _couponMessage.value = null
-            onOrderCreated?.invoke(order)
-            _customerTab.value = CustomerTab.ORDERS
+            if (items.isEmpty()) {
+                onError?.invoke("Cart is empty.")
+                return@launch
+            }
+            try {
+                val order = repository.placeOrder(
+                    customerName = customerName,
+                    customerEmail = customerEmail,
+                    customerPhone = customerPhone,
+                    address = address,
+                    items = items,
+                    appliedCoupon = _appliedCoupon.value,
+                    paymentMethod = paymentMethod
+                )
+                _appliedCoupon.value = null
+                _couponMessage.value = null
+                onOrderCreated?.invoke(order)
+                _customerTab.value = CustomerTab.ORDERS
+            } catch (e: Exception) {
+                onError?.invoke(e.localizedMessage ?: "Order placement failed.")
+            }
         }
     }
 
@@ -445,9 +474,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun addProductReview(productId: String, author: String, rating: Int, comment: String) {
+    fun addProductReview(productId: String, author: String, rating: Int, comment: String, onDone: ((ProductReview) -> Unit)? = null) {
         viewModelScope.launch {
-            repository.addProductReview(productId, author, rating, comment)
+            val customerId = repository.supabaseClient.currentUserId
+            val review = repository.addProductReview(productId, customerId, author, rating, comment)
+            onDone?.invoke(review)
+        }
+    }
+
+    fun approveReview(reviewId: String) {
+        viewModelScope.launch {
+            repository.approveReview(reviewId)
+        }
+    }
+
+    fun rejectReview(reviewId: String) {
+        viewModelScope.launch {
+            repository.rejectReview(reviewId)
         }
     }
 

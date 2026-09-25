@@ -15,6 +15,8 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
+import java.text.SimpleDateFormat
+import java.util.*
 import java.util.concurrent.TimeUnit
 
 class SupabaseClient(context: Context? = null) {
@@ -531,6 +533,591 @@ class SupabaseClient(context: Context? = null) {
                 .url("$supabaseUrl/rest/v1/product_research")
                 .addHeader("apikey", supabaseAnonKey)
                 .addHeader("Authorization", getAuthHeader())
+                .post(body)
+                .build()
+
+            val resp = okHttpClient.newCall(req).execute()
+            val ok = resp.isSuccessful
+            resp.close()
+            ok
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    // ==========================================
+    // GUEST SESSION & CART (public.carts & public.cart_items)
+    // ==========================================
+
+    val guestSessionId: String by lazy {
+        val existing = prefs?.getString("guest_session_token", null)
+        if (!existing.isNullOrBlank()) {
+            existing
+        } else {
+            val gen = "guest_${UUID.randomUUID()}"
+            prefs?.edit()?.putString("guest_session_token", gen)?.apply()
+            gen
+        }
+    }
+
+    suspend fun getOrCreateCartId(customerId: String?): String? = withContext(Dispatchers.IO) {
+        try {
+            val queryUrl = if (customerId != null) {
+                "$supabaseUrl/rest/v1/carts?customer_id=eq.$customerId&select=id&limit=1"
+            } else {
+                "$supabaseUrl/rest/v1/carts?session_token=eq.$guestSessionId&select=id&limit=1"
+            }
+
+            val req = Request.Builder()
+                .url(queryUrl)
+                .addHeader("apikey", supabaseAnonKey)
+                .addHeader("Authorization", getAuthHeader())
+                .get()
+                .build()
+
+            val resp = okHttpClient.newCall(req).execute()
+            if (resp.isSuccessful) {
+                val json = resp.body?.string() ?: "[]"
+                val arr = JSONArray(json)
+                if (arr.length() > 0) {
+                    return@withContext arr.getJSONObject(0).getString("id")
+                }
+            }
+
+            // Create new cart
+            val newId = UUID.randomUUID().toString()
+            val payload = JSONObject().apply {
+                put("id", newId)
+                if (customerId != null) {
+                    put("customer_id", customerId)
+                } else {
+                    put("session_token", guestSessionId)
+                }
+            }
+            val body = payload.toString().toRequestBody("application/json".toMediaType())
+            val createReq = Request.Builder()
+                .url("$supabaseUrl/rest/v1/carts")
+                .addHeader("apikey", supabaseAnonKey)
+                .addHeader("Authorization", getAuthHeader())
+                .post(body)
+                .build()
+
+            val createResp = okHttpClient.newCall(createReq).execute()
+            val ok = createResp.isSuccessful
+            createResp.close()
+            if (ok) newId else null
+        } catch (e: Exception) {
+            Log.e(tag, "Get/create cart error", e)
+            null
+        }
+    }
+
+    suspend fun fetchCartItemsRemote(customerId: String?): List<CartItem>? = withContext(Dispatchers.IO) {
+        try {
+            val cartId = getOrCreateCartId(customerId) ?: return@withContext null
+            val req = Request.Builder()
+                .url("$supabaseUrl/rest/v1/cart_items?cart_id=eq.$cartId&select=*,products(name,selling_price,images,sku)")
+                .addHeader("apikey", supabaseAnonKey)
+                .addHeader("Authorization", getAuthHeader())
+                .get()
+                .build()
+
+            val resp = okHttpClient.newCall(req).execute()
+            if (resp.isSuccessful) {
+                val json = resp.body?.string() ?: "[]"
+                val arr = JSONArray(json)
+                val list = mutableListOf<CartItem>()
+                for (i in 0 until arr.length()) {
+                    val obj = arr.getJSONObject(i)
+                    val prodObj = obj.optJSONObject("products")
+                    list.add(
+                        CartItem(
+                            productId = obj.getString("product_id"),
+                            name = prodObj?.optString("name") ?: "Product",
+                            price = obj.optDouble("price", prodObj?.optDouble("selling_price", 0.0) ?: 0.0),
+                            quantity = obj.optInt("quantity", 1),
+                            imageUrl = prodObj?.optJSONArray("images")?.optString(0),
+                            sku = prodObj?.optString("sku")
+                        )
+                    )
+                }
+                list
+            } else null
+        } catch (e: Exception) {
+            Log.e(tag, "Fetch remote cart items error", e)
+            null
+        }
+    }
+
+    suspend fun syncCartItemRemote(customerId: String?, productId: String, quantity: Int, price: Double): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val cartId = getOrCreateCartId(customerId) ?: return@withContext false
+            val payload = JSONObject().apply {
+                put("cart_id", cartId)
+                put("product_id", productId)
+                put("quantity", quantity)
+                put("price", price)
+            }
+            val body = payload.toString().toRequestBody("application/json".toMediaType())
+            val req = Request.Builder()
+                .url("$supabaseUrl/rest/v1/cart_items")
+                .addHeader("apikey", supabaseAnonKey)
+                .addHeader("Authorization", getAuthHeader())
+                .addHeader("Prefer", "resolution=merge-duplicates")
+                .post(body)
+                .build()
+
+            val resp = okHttpClient.newCall(req).execute()
+            val ok = resp.isSuccessful
+            resp.close()
+            ok
+        } catch (e: Exception) {
+            Log.e(tag, "Sync cart item remote error", e)
+            false
+        }
+    }
+
+    suspend fun removeCartItemRemote(customerId: String?, productId: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val cartId = getOrCreateCartId(customerId) ?: return@withContext false
+            val req = Request.Builder()
+                .url("$supabaseUrl/rest/v1/cart_items?cart_id=eq.$cartId&product_id=eq.$productId")
+                .addHeader("apikey", supabaseAnonKey)
+                .addHeader("Authorization", getAuthHeader())
+                .delete()
+                .build()
+
+            val resp = okHttpClient.newCall(req).execute()
+            val ok = resp.isSuccessful
+            resp.close()
+            ok
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    suspend fun clearCartRemote(customerId: String?): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val cartId = getOrCreateCartId(customerId) ?: return@withContext false
+            val req = Request.Builder()
+                .url("$supabaseUrl/rest/v1/cart_items?cart_id=eq.$cartId")
+                .addHeader("apikey", supabaseAnonKey)
+                .addHeader("Authorization", getAuthHeader())
+                .delete()
+                .build()
+
+            val resp = okHttpClient.newCall(req).execute()
+            val ok = resp.isSuccessful
+            resp.close()
+            ok
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    suspend fun mergeGuestCartOnLogin(newCustomerId: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val guestCartReq = Request.Builder()
+                .url("$supabaseUrl/rest/v1/carts?session_token=eq.$guestSessionId&select=id")
+                .addHeader("apikey", supabaseAnonKey)
+                .addHeader("Authorization", getAuthHeader())
+                .get()
+                .build()
+
+            val guestResp = okHttpClient.newCall(guestCartReq).execute()
+            if (!guestResp.isSuccessful) return@withContext false
+            val guestCartJson = guestResp.body?.string() ?: "[]"
+            val guestArr = JSONArray(guestCartJson)
+            if (guestArr.length() == 0) return@withContext true
+
+            val guestCartId = guestArr.getJSONObject(0).getString("id")
+            val userCartId = getOrCreateCartId(newCustomerId) ?: return@withContext false
+
+            // Update items to userCartId
+            val updatePayload = JSONObject().apply {
+                put("cart_id", userCartId)
+            }
+            val updateBody = updatePayload.toString().toRequestBody("application/json".toMediaType())
+            val patchReq = Request.Builder()
+                .url("$supabaseUrl/rest/v1/cart_items?cart_id=eq.$guestCartId")
+                .addHeader("apikey", supabaseAnonKey)
+                .addHeader("Authorization", getAuthHeader())
+                .patch(updateBody)
+                .build()
+            okHttpClient.newCall(patchReq).execute().close()
+
+            // Delete guest cart
+            val delReq = Request.Builder()
+                .url("$supabaseUrl/rest/v1/carts?id=eq.$guestCartId")
+                .addHeader("apikey", supabaseAnonKey)
+                .addHeader("Authorization", getAuthHeader())
+                .delete()
+                .build()
+            okHttpClient.newCall(delReq).execute().close()
+            true
+        } catch (e: Exception) {
+            Log.e(tag, "Merge guest cart error", e)
+            false
+        }
+    }
+
+    // ==========================================
+    // WISHLIST (public.wishlists)
+    // ==========================================
+
+    suspend fun fetchWishlistRemote(customerId: String): List<String>? = withContext(Dispatchers.IO) {
+        try {
+            val req = Request.Builder()
+                .url("$supabaseUrl/rest/v1/wishlists?customer_id=eq.$customerId&select=product_id")
+                .addHeader("apikey", supabaseAnonKey)
+                .addHeader("Authorization", getAuthHeader())
+                .get()
+                .build()
+
+            val resp = okHttpClient.newCall(req).execute()
+            if (resp.isSuccessful) {
+                val json = resp.body?.string() ?: "[]"
+                val arr = JSONArray(json)
+                val list = mutableListOf<String>()
+                for (i in 0 until arr.length()) {
+                    list.add(arr.getJSONObject(i).getString("product_id"))
+                }
+                list
+            } else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    suspend fun addToWishlistRemote(customerId: String, productId: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val payload = JSONObject().apply {
+                put("customer_id", customerId)
+                put("product_id", productId)
+            }
+            val body = payload.toString().toRequestBody("application/json".toMediaType())
+            val req = Request.Builder()
+                .url("$supabaseUrl/rest/v1/wishlists")
+                .addHeader("apikey", supabaseAnonKey)
+                .addHeader("Authorization", getAuthHeader())
+                .addHeader("Prefer", "resolution=merge-duplicates")
+                .post(body)
+                .build()
+
+            val resp = okHttpClient.newCall(req).execute()
+            val ok = resp.isSuccessful
+            resp.close()
+            ok
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    suspend fun removeFromWishlistRemote(customerId: String, productId: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val req = Request.Builder()
+                .url("$supabaseUrl/rest/v1/wishlists?customer_id=eq.$customerId&product_id=eq.$productId")
+                .addHeader("apikey", supabaseAnonKey)
+                .addHeader("Authorization", getAuthHeader())
+                .delete()
+                .build()
+
+            val resp = okHttpClient.newCall(req).execute()
+            val ok = resp.isSuccessful
+            resp.close()
+            ok
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    // ==========================================
+    // REVIEWS (public.product_reviews)
+    // ==========================================
+
+    suspend fun insertReviewRemote(review: ProductReview): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val payload = JSONObject().apply {
+                put("id", review.id)
+                put("product_id", review.productId)
+                if (review.customerId != null) put("customer_id", review.customerId)
+                if (review.orderId != null) put("order_id", review.orderId)
+                put("rating", review.rating)
+                put("title", review.title ?: "Customer Review")
+                put("review", review.comment.ifBlank { review.review })
+                put("is_verified_purchase", review.isVerifiedPurchase)
+                put("is_published", review.isPublished)
+            }
+            val body = payload.toString().toRequestBody("application/json".toMediaType())
+            val req = Request.Builder()
+                .url("$supabaseUrl/rest/v1/product_reviews")
+                .addHeader("apikey", supabaseAnonKey)
+                .addHeader("Authorization", getAuthHeader())
+                .post(body)
+                .build()
+
+            val resp = okHttpClient.newCall(req).execute()
+            val ok = resp.isSuccessful
+            resp.close()
+            ok
+        } catch (e: Exception) {
+            Log.e(tag, "Insert review error", e)
+            false
+        }
+    }
+
+    suspend fun fetchReviewsRemote(productId: String? = null): List<ProductReview>? = withContext(Dispatchers.IO) {
+        try {
+            val filter = if (productId != null) "?product_id=eq.$productId&order=created_at.desc" else "?order=created_at.desc"
+            val req = Request.Builder()
+                .url("$supabaseUrl/rest/v1/product_reviews$filter")
+                .addHeader("apikey", supabaseAnonKey)
+                .addHeader("Authorization", getAuthHeader())
+                .get()
+                .build()
+
+            val resp = okHttpClient.newCall(req).execute()
+            if (resp.isSuccessful) {
+                val json = resp.body?.string() ?: "[]"
+                val type = Types.newParameterizedType(List::class.java, ProductReview::class.java)
+                val adapter = moshi.adapter<List<ProductReview>>(type)
+                adapter.fromJson(json)
+            } else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    suspend fun updateReviewStatusRemote(reviewId: String, isPublished: Boolean): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val payload = JSONObject().apply {
+                put("is_published", isPublished)
+            }
+            val body = payload.toString().toRequestBody("application/json".toMediaType())
+            val req = Request.Builder()
+                .url("$supabaseUrl/rest/v1/product_reviews?id=eq.$reviewId")
+                .addHeader("apikey", supabaseAnonKey)
+                .addHeader("Authorization", getAuthHeader())
+                .patch(body)
+                .build()
+
+            val resp = okHttpClient.newCall(req).execute()
+            val ok = resp.isSuccessful
+            resp.close()
+            ok
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    // ==========================================
+    // COUPON REMOTE VALIDATION & REDEMPTION (public.coupons)
+    // ==========================================
+
+    suspend fun validateCouponRemote(code: String, subtotal: Double): Result<Coupon> = withContext(Dispatchers.IO) {
+        try {
+            val req = Request.Builder()
+                .url("$supabaseUrl/rest/v1/coupons?code=eq.${code.trim().uppercase()}&select=*")
+                .addHeader("apikey", supabaseAnonKey)
+                .addHeader("Authorization", getAuthHeader())
+                .get()
+                .build()
+
+            val resp = okHttpClient.newCall(req).execute()
+            val respBody = resp.body?.string() ?: ""
+            if (!resp.isSuccessful) {
+                return@withContext Result.failure(Exception("Failed to validate coupon from server (HTTP ${resp.code})"))
+            }
+
+            val type = Types.newParameterizedType(List::class.java, Coupon::class.java)
+            val adapter = moshi.adapter<List<Coupon>>(type)
+            val list = adapter.fromJson(respBody)
+            val coupon = list?.firstOrNull() ?: return@withContext Result.failure(Exception("Coupon code '$code' does not exist."))
+
+            if (!coupon.isActive) {
+                return@withContext Result.failure(Exception("Coupon '$code' is currently inactive."))
+            }
+
+            val now = System.currentTimeMillis()
+            val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).apply {
+                timeZone = TimeZone.getTimeZone("UTC")
+            }
+
+            if (!coupon.startsAt.isNullOrBlank()) {
+                try {
+                    val sDate = sdf.parse(coupon.startsAt.take(19))
+                    if (sDate != null && now < sDate.time) {
+                        return@withContext Result.failure(Exception("Coupon '$code' promotion has not started yet."))
+                    }
+                } catch (_: Exception) {}
+            }
+
+            if (!coupon.expiresAt.isNullOrBlank()) {
+                try {
+                    val eDate = sdf.parse(coupon.expiresAt.take(19))
+                    if (eDate != null && now > eDate.time) {
+                        return@withContext Result.failure(Exception("Coupon '$code' has expired."))
+                    }
+                } catch (_: Exception) {}
+            }
+
+            if (subtotal < coupon.minimumOrderAmount) {
+                return@withContext Result.failure(Exception("Order subtotal (₹${subtotal.toInt()}) must be at least ₹${coupon.minimumOrderAmount.toInt()} to use this coupon."))
+            }
+
+            if (coupon.usageLimit != null && coupon.usedCount >= coupon.usageLimit) {
+                return@withContext Result.failure(Exception("Coupon '$code' has reached its maximum redemption limit."))
+            }
+
+            Result.success(coupon)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun redeemCouponAtomic(couponId: String, currentUsedCount: Int): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val payload = JSONObject().apply {
+                put("used_count", currentUsedCount + 1)
+            }
+            val body = payload.toString().toRequestBody("application/json".toMediaType())
+            // Conditional PATCH to enforce atomic increment without race conditions
+            val req = Request.Builder()
+                .url("$supabaseUrl/rest/v1/coupons?id=eq.$couponId&used_count=eq.$currentUsedCount")
+                .addHeader("apikey", supabaseAnonKey)
+                .addHeader("Authorization", getAuthHeader())
+                .addHeader("Prefer", "return=representation")
+                .patch(body)
+                .build()
+
+            val resp = okHttpClient.newCall(req).execute()
+            val respBody = resp.body?.string() ?: ""
+            val ok = resp.isSuccessful && respBody != "[]" && respBody.isNotBlank()
+            resp.close()
+            ok
+        } catch (e: Exception) {
+            Log.e(tag, "Redeem coupon atomic error", e)
+            false
+        }
+    }
+
+    // ==========================================
+    // AUTOMATION RUNS (public.automation_runs)
+    // ==========================================
+
+    suspend fun recordAutomationRunRemote(run: AutomationRun): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val payload = JSONObject().apply {
+                put("id", run.id)
+                if (run.ruleId != null) put("rule_id", run.ruleId)
+                put("status", run.status)
+                put("log_output", run.logOutput.ifBlank { run.outputData ?: "" })
+            }
+            val body = payload.toString().toRequestBody("application/json".toMediaType())
+            val req = Request.Builder()
+                .url("$supabaseUrl/rest/v1/automation_runs")
+                .addHeader("apikey", supabaseAnonKey)
+                .addHeader("Authorization", getAuthHeader())
+                .post(body)
+                .build()
+
+            val resp = okHttpClient.newCall(req).execute()
+            val ok = resp.isSuccessful
+            resp.close()
+            ok
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    // ==========================================
+    // STOCK & PRICE HISTORY (public.stock_history & public.price_history)
+    // ==========================================
+
+    suspend fun recordStockHistoryRemote(productId: String, oldStock: Int, newStock: Int, reason: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val payload = JSONObject().apply {
+                put("product_id", productId)
+                put("old_stock", oldStock)
+                put("new_stock", newStock)
+                put("change_reason", reason)
+            }
+            val body = payload.toString().toRequestBody("application/json".toMediaType())
+            val req = Request.Builder()
+                .url("$supabaseUrl/rest/v1/stock_history")
+                .addHeader("apikey", supabaseAnonKey)
+                .addHeader("Authorization", getAuthHeader())
+                .post(body)
+                .build()
+
+            val resp = okHttpClient.newCall(req).execute()
+            val ok = resp.isSuccessful
+            resp.close()
+            ok
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    suspend fun recordPriceHistoryRemote(productId: String, oldPrice: Double, newPrice: Double, source: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val payload = JSONObject().apply {
+                put("product_id", productId)
+                put("old_price", oldPrice)
+                put("new_price", newPrice)
+                put("source", source)
+            }
+            val body = payload.toString().toRequestBody("application/json".toMediaType())
+            val req = Request.Builder()
+                .url("$supabaseUrl/rest/v1/price_history")
+                .addHeader("apikey", supabaseAnonKey)
+                .addHeader("Authorization", getAuthHeader())
+                .post(body)
+                .build()
+
+            val resp = okHttpClient.newCall(req).execute()
+            val ok = resp.isSuccessful
+            resp.close()
+            ok
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    // ==========================================
+    // CUSTOMER ADDRESSES (public.customer_addresses)
+    // ==========================================
+
+    suspend fun fetchCustomerAddresses(customerId: String): List<CustomerAddress>? = withContext(Dispatchers.IO) {
+        try {
+            val req = Request.Builder()
+                .url("$supabaseUrl/rest/v1/customer_addresses?customer_id=eq.$customerId&order=created_at.desc")
+                .addHeader("apikey", supabaseAnonKey)
+                .addHeader("Authorization", getAuthHeader())
+                .get()
+                .build()
+
+            val resp = okHttpClient.newCall(req).execute()
+            if (resp.isSuccessful) {
+                val json = resp.body?.string() ?: "[]"
+                val type = Types.newParameterizedType(List::class.java, CustomerAddress::class.java)
+                val adapter = moshi.adapter<List<CustomerAddress>>(type)
+                adapter.fromJson(json)
+            } else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    suspend fun saveCustomerAddress(address: CustomerAddress): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val adapter = moshi.adapter(CustomerAddress::class.java)
+            val body = adapter.toJson(address).toRequestBody("application/json".toMediaType())
+            val req = Request.Builder()
+                .url("$supabaseUrl/rest/v1/customer_addresses")
+                .addHeader("apikey", supabaseAnonKey)
+                .addHeader("Authorization", getAuthHeader())
+                .addHeader("Prefer", "resolution=merge-duplicates")
                 .post(body)
                 .build()
 

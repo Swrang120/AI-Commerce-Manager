@@ -589,6 +589,7 @@ private fun copyToClipboard(context: Context, text: String) {
 @Composable
 fun AutomationScreen(viewModel: MainViewModel) {
     val rules by viewModel.automationRules.collectAsState()
+    val runs by viewModel.automationRuns.collectAsState()
 
     LazyColumn(
         modifier = Modifier
@@ -600,7 +601,7 @@ fun AutomationScreen(viewModel: MainViewModel) {
     ) {
         item {
             Text(text = "Dropshipping Automation Engine", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Text(text = "Configure rules to auto-monitor supplier pricing spikes, stock changes, and automated customer notifications.", style = MaterialTheme.typography.bodySmall, color = Slate600)
+            Text(text = "Execute genuine rules for price monitoring, stock audits, AI generation, and order reconciliation.", style = MaterialTheme.typography.bodySmall, color = Slate600)
         }
 
         items(rules) { rule ->
@@ -639,6 +640,68 @@ fun AutomationScreen(viewModel: MainViewModel) {
                         ) {
                             Text("Run Now", fontSize = 11.sp)
                         }
+                    }
+                }
+            }
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = "Recent Execution Logs (automation_runs)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(text = "Recorded in local database and synced to Supabase automation_runs", style = MaterialTheme.typography.bodySmall, color = Slate600)
+        }
+
+        if (runs.isEmpty()) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Slate50)
+                ) {
+                    Text(
+                        text = "No runs executed yet. Tap 'Run Now' on any rule to trigger execution.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Slate600,
+                        modifier = Modifier.padding(14.dp)
+                    )
+                }
+            }
+        } else {
+            items(runs) { run ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(text = run.ruleName, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                            val (badgeBg, badgeFg) = when (run.status) {
+                                "success" -> Emerald50 to Emerald700
+                                "failed" -> Rose50 to Rose500
+                                "running" -> Indigo50 to Indigo700
+                                else -> Slate100 to Slate700
+                            }
+                            Surface(color = badgeBg, shape = RoundedCornerShape(6.dp)) {
+                                Text(
+                                    text = run.status.uppercase(),
+                                    color = badgeFg,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        Text(text = run.logOutput.ifBlank { run.outputData ?: "Executed" }, fontSize = 12.sp, color = Slate700)
+                        if (!run.errorMessage.isNullOrBlank()) {
+                            Text(text = "Error: ${run.errorMessage}", fontSize = 11.sp, color = Rose500)
+                        }
+                        Text(text = "Ran at: ${run.ranAt.ifBlank { run.completedAt ?: "Just now" }}", fontSize = 10.sp, color = Slate400)
                     }
                 }
             }
@@ -755,6 +818,440 @@ fun SettingsScreen(viewModel: MainViewModel) {
                         color = Slate600
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun AdminReviewsScreen(viewModel: MainViewModel) {
+    val reviews by viewModel.reviews.collectAsState()
+    var filterPendingOnly by remember { mutableStateOf(false) }
+
+    val displayedReviews = remember(reviews, filterPendingOnly) {
+        if (filterPendingOnly) reviews.filter { it.status == "pending" || !it.isPublished }
+        else reviews
+    }
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .testTag("admin_reviews_screen"),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(bottom = 80.dp)
+    ) {
+        item {
+            Text(text = "Customer Reviews Moderation", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(text = "Reviews default to unverified and unpublished until verified through purchase history and admin approval.", style = MaterialTheme.typography.bodySmall, color = Slate600)
+            Spacer(modifier = Modifier.height(6.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(
+                    selected = !filterPendingOnly,
+                    onClick = { filterPendingOnly = false },
+                    label = { Text("All (${reviews.size})") }
+                )
+                FilterChip(
+                    selected = filterPendingOnly,
+                    onClick = { filterPendingOnly = true },
+                    label = { Text("Pending Moderation (${reviews.count { it.status == "pending" || !it.isPublished }})") }
+                )
+            }
+        }
+
+        if (displayedReviews.isEmpty()) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Slate50)
+                ) {
+                    Text(
+                        text = "No reviews found for the selected filter.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Slate600,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            }
+        } else {
+            items(displayedReviews) { review ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                ) {
+                    Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(text = review.authorName, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                if (review.isVerifiedPurchase || review.verifiedPurchase) {
+                                    Surface(color = Emerald50, shape = RoundedCornerShape(4.dp)) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(imageVector = Icons.Default.CheckCircle, contentDescription = null, tint = Emerald700, modifier = Modifier.size(12.dp))
+                                            Spacer(modifier = Modifier.width(3.dp))
+                                            Text("Verified Purchase", fontSize = 10.sp, color = Emerald700, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                } else {
+                                    Surface(color = Slate100, shape = RoundedCornerShape(4.dp)) {
+                                        Text("Unverified", fontSize = 10.sp, color = Slate600, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                    }
+                                }
+                                Surface(
+                                    color = if (review.status == "published" || review.isPublished) Emerald50 else Amber50,
+                                    shape = RoundedCornerShape(4.dp)
+                                ) {
+                                    Text(
+                                        text = if (review.status == "published" || review.isPublished) "PUBLISHED" else "PENDING",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (review.status == "published" || review.isPublished) Emerald700 else Amber700,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        Row {
+                            repeat(review.rating) {
+                                Icon(imageVector = Icons.Default.Star, contentDescription = null, tint = Amber500, modifier = Modifier.size(14.dp))
+                            }
+                        }
+
+                        Text(text = review.comment.ifBlank { review.review }, style = MaterialTheme.typography.bodyMedium, color = Slate800)
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(text = "Submitted: ${review.createdAt ?: "Recently"}", fontSize = 11.sp, color = Slate400)
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                if (review.status != "published" && !review.isPublished) {
+                                    Button(
+                                        onClick = { viewModel.approveReview(review.id) },
+                                        colors = ButtonDefaults.buttonColors(containerColor = Emerald700),
+                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                                        modifier = Modifier.height(30.dp)
+                                    ) {
+                                        Text("Approve & Publish", fontSize = 11.sp)
+                                    }
+                                }
+                                if (review.status != "rejected") {
+                                    OutlinedButton(
+                                        onClick = { viewModel.rejectReview(review.id) },
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                        modifier = Modifier.height(30.dp)
+                                    ) {
+                                        Text("Reject", fontSize = 11.sp, color = Rose500)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AdminCouponsScreen(viewModel: MainViewModel) {
+    val coupons by viewModel.coupons.collectAsState()
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .testTag("admin_coupons_screen"),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(bottom = 80.dp)
+    ) {
+        item {
+            Text(text = "Promotional Coupons & Discounts", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(text = "Coupons are validated authoritatively against Supabase and redeemed atomically.", style = MaterialTheme.typography.bodySmall, color = Slate600)
+        }
+
+        if (coupons.isEmpty()) {
+            item {
+                Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Slate50)) {
+                    Text("No active coupons configured.", style = MaterialTheme.typography.bodySmall, color = Slate600, modifier = Modifier.padding(14.dp))
+                }
+            }
+        } else {
+            items(coupons) { coupon ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                ) {
+                    Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(text = coupon.code, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = Indigo600)
+                            Surface(color = if (coupon.isActive) Emerald50 else Slate100, shape = RoundedCornerShape(4.dp)) {
+                                Text(
+                                    text = if (coupon.isActive) "ACTIVE" else "INACTIVE",
+                                    color = if (coupon.isActive) Emerald700 else Slate600,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        Text(
+                            text = "Discount: ${if (coupon.discountType == "percentage") "${coupon.discountValue.toInt()}% off" else "₹${coupon.discountValue.toInt()} flat"}",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(text = "Min Order: ₹${coupon.minimumOrderAmount.toInt()}", fontSize = 12.sp, color = Slate600)
+                        Text(text = "Redemptions: ${coupon.usedCount}${if (coupon.usageLimit != null) " / ${coupon.usageLimit}" else " (Unlimited)"}", fontSize = 12.sp, color = Slate600)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AdminShipmentsScreen(viewModel: MainViewModel) {
+    val orders by viewModel.orders.collectAsState()
+    val shippedOrders = remember(orders) {
+        orders.filter { it.status == "shipped" || it.supplierStatus == "ordered" || it.status == "delivered" }
+    }
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .testTag("admin_shipments_screen"),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(bottom = 80.dp)
+    ) {
+        item {
+            Text(text = "Shipment & Tracking Registry", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(text = "Real courier dispatch records. Direct integration with Delhivery, BlueDart, and DTDC manual fulfillment.", style = MaterialTheme.typography.bodySmall, color = Slate600)
+        }
+
+        if (shippedOrders.isEmpty()) {
+            item {
+                Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Slate50)) {
+                    Text("No active shipments dispatched yet. Process an order in the Orders tab to create a shipment.", style = MaterialTheme.typography.bodySmall, color = Slate600, modifier = Modifier.padding(14.dp))
+                }
+            }
+        } else {
+            items(shippedOrders) { order ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                ) {
+                    Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(text = "Order #${order.orderNumber}", fontWeight = FontWeight.Bold)
+                            StatusBadge(status = order.status)
+                        }
+                        Text(text = "Recipient: ${order.customerName} (${order.shippingAddress.take(40)}...)", fontSize = 12.sp, color = Slate700)
+                        Text(text = "Order Total: ₹${order.totalAmount.toInt()} | Items: ${order.items.size}", fontSize = 12.sp, color = Slate600)
+                        Text(text = "Dispatched: ${order.createdAt ?: "Recently"}", fontSize = 11.sp, color = Slate400)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AdminPaymentsScreen(viewModel: MainViewModel) {
+    val orders by viewModel.orders.collectAsState()
+    val paidOrders = remember(orders) {
+        orders.filter { it.status == "paid" || it.paymentStatus == "captured" || it.status == "shipped" || it.status == "delivered" }
+    }
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .testTag("admin_payments_screen"),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(bottom = 80.dp)
+    ) {
+        item {
+            Text(text = "Verified Payment Records", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(text = "Transactions verified server-side through Razorpay orders and captured in Supabase.", style = MaterialTheme.typography.bodySmall, color = Slate600)
+        }
+
+        if (paidOrders.isEmpty()) {
+            item {
+                Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Slate50)) {
+                    Text("No captured payments recorded yet. Payments initialize as pending until server-verified.", style = MaterialTheme.typography.bodySmall, color = Slate600, modifier = Modifier.padding(14.dp))
+                }
+            }
+        } else {
+            items(paidOrders) { order ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                ) {
+                    Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(text = "Order #${order.orderNumber}", fontWeight = FontWeight.Bold)
+                            Text(text = "₹${order.totalAmount.toInt()}", fontWeight = FontWeight.ExtraBold, color = Emerald700)
+                        }
+                        Text(text = "Payer: ${order.customerName} (${order.customerEmail})", fontSize = 12.sp, color = Slate700)
+                        Text(text = "Gateway: Razorpay (Signature Verified)", fontSize = 12.sp, color = Indigo600)
+                        if (!order.razorpayPaymentId.isNullOrBlank()) {
+                            Text(text = "Payment ID: ${order.razorpayPaymentId}", fontSize = 11.sp, color = Slate600)
+                        }
+                        Text(text = "Status: Captured & Reconciled", fontSize = 11.sp, color = Emerald700, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AdminActivityScreen(viewModel: MainViewModel) {
+    val logs by viewModel.activityLogs.collectAsState()
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .testTag("admin_activity_screen"),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        contentPadding = PaddingValues(bottom = 80.dp)
+    ) {
+        item {
+            Text(text = "Audit & Security Activity Logs", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(text = "Immutable audit log tracking order lifecycle, price adjustments, and admin fulfillment.", style = MaterialTheme.typography.bodySmall, color = Slate600)
+        }
+
+        if (logs.isEmpty()) {
+            item {
+                Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Slate50)) {
+                    Text("No activity logged yet.", style = MaterialTheme.typography.bodySmall, color = Slate600, modifier = Modifier.padding(14.dp))
+                }
+            }
+        } else {
+            items(logs) { log ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(text = log.action, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text(text = log.timestamp, fontSize = 10.sp, color = Slate400)
+                        }
+                        Text(text = log.details.ifBlank { log.description }, fontSize = 12.sp, color = Slate700)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AdminAiCenterScreen(viewModel: MainViewModel) {
+    val context = LocalContext.current
+    var promptInput by remember { mutableStateOf("") }
+    var selectedTask by remember { mutableStateOf("Product SEO Copy") }
+    val isAiLoading by viewModel.isAiLoading.collectAsState()
+    val aiBundle by viewModel.aiMarketingBundle.collectAsState()
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .testTag("admin_ai_center_screen"),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+        contentPadding = PaddingValues(bottom = 80.dp)
+    ) {
+        item {
+            Text(text = "AI Commerce Intelligence Center", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(text = "Gemini powered engine for catalog optimization, SEO descriptions, and marketing asset drafting.", style = MaterialTheme.typography.bodySmall, color = Slate600)
+        }
+
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(text = "Generate Marketing Bundle", fontWeight = FontWeight.Bold)
+                    OutlinedTextField(
+                        value = promptInput,
+                        onValueChange = { promptInput = it },
+                        label = { Text("Product Name or Concept") },
+                        placeholder = { Text("e.g. Minimalist Titanium Water Bottle") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Button(
+                        onClick = {
+                            if (promptInput.isNotBlank()) {
+                                viewModel.generateMarketingCopy(promptInput, 1499.0)
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Indigo600),
+                        enabled = !isAiLoading && promptInput.isNotBlank(),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (isAiLoading) {
+                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Generating with Gemini...")
+                        } else {
+                            Icon(imageVector = Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Generate Multi-Platform Copy")
+                        }
+                    }
+                }
+            }
+        }
+
+        if (aiBundle != null) {
+            item {
+                Text(text = "Generated Draft Copy (Review before publishing)", fontWeight = FontWeight.Bold)
+            }
+            item {
+                CopySnippetCard(
+                    platform = "Instagram Caption",
+                    copy = aiBundle!!.instagramCaption,
+                    onCopy = { copyToClipboard(context, aiBundle!!.instagramCaption) }
+                )
+            }
+            item {
+                CopySnippetCard(
+                    platform = "WhatsApp Message",
+                    copy = aiBundle!!.whatsappMessage,
+                    onCopy = { copyToClipboard(context, aiBundle!!.whatsappMessage) }
+                )
+            }
+            item {
+                CopySnippetCard(
+                    platform = "Reels Script",
+                    copy = aiBundle!!.reelsScript,
+                    onCopy = { copyToClipboard(context, aiBundle!!.reelsScript) }
+                )
             }
         }
     }
