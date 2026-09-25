@@ -133,8 +133,12 @@
             <span id="cartCountBadge" class="hidden absolute -top-1 -right-1 bg-brand-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">0</span>
           </button>
 
-          <!-- Settings / Credentials -->
-          <button onclick="openSettingsModal()" title="Database & Credentials Settings" class="p-2 text-slate-400 hover:text-white transition rounded-lg hover:bg-slate-800">
+          <!-- Customer Account -->
+          <button onclick="openCustomerAuth()" id="customerAuthBtn" title="Login / Signup" class="px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/80 rounded-lg border border-slate-700 transition">
+            Account
+          </button>
+          <!-- Admin-only Backend Settings -->
+          <button onclick="openSettingsModal()" id="backendSettingsBtn" title="Admin backend settings" class="hidden p-2 text-slate-400 hover:text-white transition rounded-lg hover:bg-slate-800">
             <i data-lucide="settings" class="w-5 h-5"></i>
           </button>
         </div>
@@ -853,6 +857,51 @@
   </div>
 
 
+  <!-- ================= CUSTOMER AUTH ================= -->
+  <div id="customerAuthModal" class="fixed inset-0 z-[65] hidden items-center justify-center p-4">
+    <div class="fixed inset-0 bg-black/80 backdrop-blur-sm" onclick="closeCustomerAuth()"></div>
+    <div class="relative w-full max-w-md bg-dark-card border border-dark-border rounded-2xl p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-5">
+        <div>
+          <h3 id="customerAuthTitle" class="text-xl font-bold text-white">Welcome</h3>
+          <p id="customerAuthSubtitle" class="text-xs text-slate-400 mt-1">Login to manage your orders and profile.</p>
+        </div>
+        <button onclick="closeCustomerAuth()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form id="customerLoginForm" onsubmit="customerLogin(event)" class="space-y-3">
+        <input id="customerLoginEmail" type="email" required placeholder="Gmail / Email" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white">
+        <input id="customerLoginPassword" type="password" required placeholder="Password" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white">
+        <p id="customerAuthError" class="hidden text-xs text-rose-400"></p>
+        <button id="customerLoginBtn" class="w-full py-2.5 bg-brand-600 rounded-xl text-sm font-bold text-white">Login</button>
+        <div class="flex justify-between text-xs">
+          <button type="button" onclick="showCustomerSignup()" class="text-brand-400">Create account</button>
+          <button type="button" onclick="showCustomerForgot()" class="text-slate-400">Forgot password?</button>
+        </div>
+      </form>
+      <form id="customerSignupForm" onsubmit="customerSignup(event)" class="hidden space-y-3">
+        <input id="customerSignupName" type="text" required placeholder="Full Name" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white">
+        <input id="customerSignupEmail" type="email" required placeholder="Gmail / Email" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white">
+        <input id="customerSignupPassword" type="password" minlength="6" required placeholder="Password" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white">
+        <input id="customerSignupConfirm" type="password" minlength="6" required placeholder="Confirm Password" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white">
+        <p id="customerSignupMessage" class="hidden text-xs"></p>
+        <button class="w-full py-2.5 bg-brand-600 rounded-xl text-sm font-bold text-white">Create Account</button>
+        <button type="button" onclick="showCustomerLogin()" class="w-full py-2 text-xs text-slate-400">Back to Login</button>
+      </form>
+      <form id="customerForgotForm" onsubmit="sendCustomerReset(event)" class="hidden space-y-3">
+        <input id="customerForgotEmail" type="email" required placeholder="Your Gmail / Email" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white">
+        <p id="customerForgotMessage" class="hidden text-xs"></p>
+        <button class="w-full py-2.5 bg-brand-600 rounded-xl text-sm font-bold text-white">Send Reset Email</button>
+        <button type="button" onclick="showCustomerLogin()" class="w-full py-2 text-xs text-slate-400">Back to Login</button>
+      </form>
+      <form id="customerResetForm" onsubmit="updateCustomerPassword(event)" class="hidden space-y-3">
+        <input id="customerNewPassword" type="password" minlength="6" required placeholder="New Password" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white">
+        <input id="customerNewPasswordConfirm" type="password" minlength="6" required placeholder="Confirm New Password" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white">
+        <p id="customerResetMessage" class="hidden text-xs"></p>
+        <button class="w-full py-2.5 bg-emerald-600 rounded-xl text-sm font-bold text-white">Set New Password</button>
+      </form>
+    </div>
+  </div>
+
   <!-- ================= ADMIN LOGIN ================= -->
   <div id="adminLoginModal" class="fixed inset-0 z-[70] hidden items-center justify-center p-4">
     <div class="fixed inset-0 bg-black/80 backdrop-blur-sm" onclick="closeAdminLogin()"></div>
@@ -874,8 +923,8 @@
   <script>
     // Configuration
     const DEFAULT_CONFIG = {
-      supabaseUrl: 'https://widwrwsjiqbkqpzmuiwe.supabase.co',
-      supabaseKey: 'sb_publishable_YNkkAqGbQOImfGN9O3kzzw_i37CDrWY',
+      supabaseUrl: 'https://eklycpnfnyjydrgxdnzm.supabase.co',
+      supabaseKey: 'sb_publishable_NUt0MMWF-50fcrWCL5Nq-g_OX3FGqVf',
       razorpayPageUrl: 'https://razorpay.me/@santiramswargiary'
     };
 
@@ -893,6 +942,16 @@
       }
     } catch (e) {
       console.warn("Supabase init error:", e);
+    }
+
+    if (supabaseClient) {
+      supabaseClient.auth.onAuthStateChange((event, session) => {
+        customerSession = session;
+        if (event === 'PASSWORD_RECOVERY') {
+          openCustomerAuth();
+          showCustomerReset();
+        }
+      });
     }
 
     // Curated catalog matching database schema
@@ -974,6 +1033,7 @@
     let isAdminMode = false;
     let adminSession = null;
     let adminProfile = null;
+    let customerSession = null;
 
     // Guest Session ID (Requirement 33)
     let guestSessionId = localStorage.getItem('nexus_guest_session_id');
@@ -1686,12 +1746,16 @@
         custView.classList.add('hidden');
         adminView.classList.remove('hidden');
         searchBox.classList.add('hidden');
+        document.getElementById('backendSettingsBtn')?.classList.remove('hidden');
+        document.getElementById('customerAuthBtn')?.classList.add('hidden');
         toggleText.innerText = "Switch to Customer Storefront";
         loadAdminDashboard();
       } else {
         custView.classList.remove('hidden');
         adminView.classList.add('hidden');
         searchBox.classList.remove('hidden');
+        document.getElementById('backendSettingsBtn')?.classList.add('hidden');
+        document.getElementById('customerAuthBtn')?.classList.remove('hidden');
         toggleText.innerText = "Switch to Admin Portal";
       }
       lucide.createIcons();
@@ -1702,7 +1766,108 @@
       }
     }
 
-    function closeAdminLogin() {
+    function openCustomerAuth() {
+      const modal=document.getElementById('customerAuthModal');
+      modal.classList.remove('hidden'); modal.classList.add('flex');
+      showCustomerLogin();
+    }
+    function closeCustomerAuth() {
+      const modal=document.getElementById('customerAuthModal');
+      modal.classList.add('hidden'); modal.classList.remove('flex');
+    }
+    function setAuthPanel(title, subtitle, panelId) {
+      document.getElementById('customerAuthTitle').textContent=title;
+      document.getElementById('customerAuthSubtitle').textContent=subtitle;
+      ['customerLoginForm','customerSignupForm','customerForgotForm','customerResetForm'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+      document.getElementById(panelId).classList.remove('hidden');
+      document.getElementById('customerAuthError')?.classList.add('hidden');
+      lucide.createIcons();
+    }
+    function showCustomerLogin(){setAuthPanel('Welcome back','Login to manage your orders and profile.','customerLoginForm');}
+    function showCustomerSignup(){setAuthPanel('Create account','Sign up with your name, Gmail/email and password.','customerSignupForm');}
+    function showCustomerForgot(){setAuthPanel('Reset password','We will send a secure password-reset email.','customerForgotForm');}
+    function showCustomerReset(){setAuthPanel('Set new password','Choose a new password for your account.','customerResetForm');}
+
+    async function customerLogin(event){
+      event.preventDefault();
+      const btn=document.getElementById('customerLoginBtn'); btn.disabled=true; btn.textContent='Logging in…';
+      const err=document.getElementById('customerAuthError');
+      try{
+        if(!supabaseClient) throw new Error('Supabase is not available.');
+        const email=document.getElementById('customerLoginEmail').value.trim();
+        const password=document.getElementById('customerLoginPassword').value;
+        const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
+        if(error) throw error;
+        customerSession=data.session;
+        const profile=await ensureCustomerProfile(data.user);
+        if(profile?.role && ['admin','manager'].includes(profile.role)){
+          // Keep customer login available, but admin controls remain protected behind Admin Portal.
+        }
+        document.getElementById('customerAuthBtn').textContent=profile?.full_name ? profile.full_name.split(' ')[0] : 'Account';
+        closeCustomerAuth();
+        fetchSupabaseProducts();
+      }catch(e){err.textContent=e.message||'Login failed.';err.classList.remove('hidden');}
+      finally{btn.disabled=false;btn.textContent='Login';}
+    }
+
+    async function customerSignup(event){
+      event.preventDefault();
+      const name=document.getElementById('customerSignupName').value.trim();
+      const email=document.getElementById('customerSignupEmail').value.trim();
+      const password=document.getElementById('customerSignupPassword').value;
+      const confirm=document.getElementById('customerSignupConfirm').value;
+      const msg=document.getElementById('customerSignupMessage');
+      msg.classList.remove('hidden');
+      if(password!==confirm){msg.className='text-xs text-rose-400';msg.textContent='Passwords do not match.';return;}
+      try{
+        if(!supabaseClient) throw new Error('Supabase is not available.');
+        const {data,error}=await supabaseClient.auth.signUp({email,password,options:{data:{full_name:name}}});
+        if(error) throw error;
+        if(data.user && data.session) await ensureCustomerProfile(data.user,name);
+        msg.className='text-xs text-emerald-400';
+        msg.textContent=data.session ? 'Account created successfully.' : 'Account created. Check your Gmail/email for the verification link.';
+        if(data.session){setTimeout(closeCustomerAuth,700);}
+      }catch(e){msg.className='text-xs text-rose-400';msg.textContent=e.message||'Signup failed.';}
+    }
+
+    async function sendCustomerReset(event){
+      event.preventDefault();
+      const email=document.getElementById('customerForgotEmail').value.trim();
+      const msg=document.getElementById('customerForgotMessage'); msg.classList.remove('hidden');
+      try{
+        if(!supabaseClient) throw new Error('Supabase is not available.');
+        const redirectTo=window.location.origin+window.location.pathname;
+        const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo});
+        if(error) throw error;
+        msg.className='text-xs text-emerald-400'; msg.textContent='Password reset email sent. Open it from your Gmail/email.';
+      }catch(e){msg.className='text-xs text-rose-400';msg.textContent=e.message||'Could not send reset email.';}
+    }
+
+    async function updateCustomerPassword(event){
+      event.preventDefault();
+      const p=document.getElementById('customerNewPassword').value;
+      const cp=document.getElementById('customerNewPasswordConfirm').value;
+      const msg=document.getElementById('customerResetMessage'); msg.classList.remove('hidden');
+      if(p!==cp){msg.className='text-xs text-rose-400';msg.textContent='Passwords do not match.';return;}
+      try{
+        const {error}=await supabaseClient.auth.updateUser({password:p});
+        if(error) throw error;
+        msg.className='text-xs text-emerald-400'; msg.textContent='Password updated. You can now login with the new password.';
+        setTimeout(showCustomerLogin,800);
+      }catch(e){msg.className='text-xs text-rose-400';msg.textContent=e.message||'Password update failed.';}
+    }
+
+    async function ensureCustomerProfile(user, fallbackName=''){
+      const name=fallbackName || user.user_metadata?.full_name || '';
+      const {data:existing}=await supabaseClient.from('profiles').select('id,full_name,email,role').eq('id',user.id).maybeSingle();
+      if(existing) return existing;
+      // Profile creation is normally handled by the database signup trigger; this fallback helps if the trigger is not installed.
+      const {data,error}=await supabaseClient.from('profiles').insert({id:user.id,email:user.email,full_name:name,role:'customer'}).select('id,full_name,email,role').single();
+      if(error) return null;
+      return data;
+    }
+
+        function closeAdminLogin() {
       const m=document.getElementById('adminLoginModal');
       m.classList.add('hidden'); m.classList.remove('flex');
     }
