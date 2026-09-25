@@ -35,7 +35,8 @@ Deno.serve(async (req: Request) => {
       body: JSON.stringify({
         job_id: job.id, title: job.title, description: job.description,
         prompt: job.generation_prompt, aspect_ratio: job.aspect_ratio,
-        resolution: job.resolution, duration_seconds: job.duration_seconds
+        resolution: job.resolution, duration_seconds: job.duration_seconds,
+        watermark: { text: "E-commerce Shoping", position: "bottom-right", required: true }
       })
     });
 
