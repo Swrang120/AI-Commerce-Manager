@@ -257,6 +257,10 @@
         <button onclick="switchAdminTab('reviews')" id="tab-reviews" class="admin-tab-btn px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">Review Moderation</button>
         <button onclick="switchAdminTab('coupons')" id="tab-coupons" class="admin-tab-btn px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">Coupons</button>
         <button onclick="switchAdminTab('automations')" id="tab-automations" class="admin-tab-btn px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">Automation Runs</button>
+        <button onclick="switchAdminTab('hunter')" id="tab-hunter" class="admin-tab-btn px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">AI Product Hunter</button>
+        <button onclick="switchAdminTab('pricing')" id="tab-pricing" class="admin-tab-btn px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">Pricing & Margin</button>
+        <button onclick="switchAdminTab('videos')" id="tab-videos" class="admin-tab-btn px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">AI Videos</button>
+        <button onclick="switchAdminTab('autopilot')" id="tab-autopilot" class="admin-tab-btn px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">Autopilot</button>
       </div>
 
       <!-- Tab 1: Overview -->
@@ -848,6 +852,24 @@
     </div>
   </div>
 
+
+  <!-- ================= ADMIN LOGIN ================= -->
+  <div id="adminLoginModal" class="fixed inset-0 z-[70] hidden items-center justify-center p-4">
+    <div class="fixed inset-0 bg-black/80 backdrop-blur-sm" onclick="closeAdminLogin()"></div>
+    <div class="relative w-full max-w-md bg-dark-card border border-dark-border rounded-2xl p-6 shadow-2xl">
+      <div class="flex items-center gap-3 mb-5">
+        <div class="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center"><i data-lucide="shield-check" class="w-5 h-5 text-amber-400"></i></div>
+        <div><h3 class="font-bold text-white">Admin Dashboard Login</h3><p class="text-xs text-slate-400">Supabase Auth + profile role verification</p></div>
+      </div>
+      <form onsubmit="adminLogin(event)" class="space-y-3">
+        <input id="adminLoginEmail" type="email" required placeholder="Admin email" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white">
+        <input id="adminLoginPassword" type="password" required placeholder="Password" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white">
+        <p id="adminLoginError" class="hidden text-xs text-rose-400"></p>
+        <button id="adminLoginBtn" type="submit" class="w-full py-2.5 bg-brand-600 hover:bg-brand-500 rounded-xl text-sm font-bold text-white">Sign in to Dashboard</button>
+      </form>
+    </div>
+  </div>
+
   <!-- ================= JAVASCRIPT APPLICATION CORE ================= -->
   <script>
     // Configuration
@@ -950,6 +972,8 @@
     let selectedCategory = 'All';
     let currentModalProduct = null;
     let isAdminMode = false;
+    let adminSession = null;
+    let adminProfile = null;
 
     // Guest Session ID (Requirement 33)
     let guestSessionId = localStorage.getItem('nexus_guest_session_id');
@@ -1636,7 +1660,22 @@
     }
 
     // ================= ADMIN PORTAL OPERATIONS =================
-    function toggleAdminView() {
+    async function toggleAdminView() {
+      if (!isAdminMode) {
+        const { data } = supabaseClient ? await supabaseClient.auth.getSession() : { data: { session: null } };
+        if (!data.session) {
+          document.getElementById('adminLoginModal').classList.remove('hidden');
+          document.getElementById('adminLoginModal').classList.add('flex');
+          return;
+        }
+        const { data: profile } = await supabaseClient.from('profiles').select('role,full_name,email').eq('id', data.session.user.id).maybeSingle();
+        if (!profile || !['admin','manager'].includes(profile.role)) {
+          alert('This account does not have admin/manager access.');
+          return;
+        }
+        adminSession = data.session;
+        adminProfile = profile;
+      }
       isAdminMode = !isAdminMode;
       const custView = document.getElementById('customerView');
       const adminView = document.getElementById('adminView');
@@ -1656,6 +1695,88 @@
         toggleText.innerText = "Switch to Admin Portal";
       }
       lucide.createIcons();
+      if (isAdminMode) {
+        loadAdminDashboard();
+        loadVideoJobs();
+        loadAutopilotProducts();
+      }
+    }
+
+    function closeAdminLogin() {
+      const m=document.getElementById('adminLoginModal');
+      m.classList.add('hidden'); m.classList.remove('flex');
+    }
+
+    async function adminLogin(event) {
+      event.preventDefault();
+      const email=document.getElementById('adminLoginEmail').value.trim();
+      const password=document.getElementById('adminLoginPassword').value;
+      const err=document.getElementById('adminLoginError');
+      const btn=document.getElementById('adminLoginBtn');
+      err.classList.add('hidden'); btn.disabled=true; btn.textContent='Signing in…';
+      try {
+        if (!supabaseClient) throw new Error('Supabase is not available.');
+        const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
+        if(error) throw error;
+        const {data:profile,error:profileError}=await supabaseClient.from('profiles').select('role,full_name,email').eq('id',data.user.id).maybeSingle();
+        if(profileError) throw profileError;
+        if(!profile || !['admin','manager'].includes(profile.role)) {
+          await supabaseClient.auth.signOut();
+          throw new Error('Account authenticated, but its profile role is not admin/manager.');
+        }
+        adminSession=data.session; adminProfile=profile; closeAdminLogin();
+        if(!isAdminMode) toggleAdminView();
+      } catch(e) {
+        err.textContent=e.message || 'Login failed.'; err.classList.remove('hidden');
+      } finally { btn.disabled=false; btn.textContent='Sign in to Dashboard'; }
+    }
+
+    async function loadVideoJobs() {
+      const list=document.getElementById('videoJobsList'); if(!list || !supabaseClient) return;
+      const {data,error}=await supabaseClient.from('video_jobs').select('*').order('created_at',{ascending:false}).limit(50);
+      if(error){list.innerHTML='<div class="p-4 bg-rose-500/10 text-rose-300 rounded-xl text-sm">'+error.message+'</div>';return;}
+      list.innerHTML=(data||[]).map(j=>`<div class="p-4 bg-dark-card border border-dark-border rounded-xl"><div class="flex justify-between gap-3"><div><b>${j.title}</b><div class="text-xs text-slate-400 mt-1">${j.generation_status} · ${j.aspect_ratio}</div></div><div class="flex gap-2">${j.video_url?`<a class="px-3 py-1 bg-slate-800 rounded-lg text-xs" href="${j.video_url}" target="_blank">Preview</a>`:''}<button onclick="generateVideoJob('${j.id}')" class="px-3 py-1 bg-brand-600 rounded-lg text-xs">Generate</button></div></div></div>`).join('') || '<div class="text-sm text-slate-500">No video jobs yet.</div>';
+    }
+
+    async function queueSelectedVideo() {
+      const id=document.getElementById('videoProductSelect')?.value; const p=storeProducts.find(x=>x.id===id);
+      if(!p) return alert('Select a product first.');
+      const {error}=await supabaseClient.from('video_jobs').insert({product_id:p.id,created_by:adminSession.user.id,title:p.name+' — Product Video',description:p.short_description||'',generation_prompt:'Premium ecommerce product video using only verified product facts. No fake claims, reviews, or copyrighted material.',aspect_ratio:document.getElementById('videoAspect').value,resolution:'1080p',duration_seconds:30,generation_status:'queued'});
+      if(error) alert(error.message); else { alert('Video job queued.'); loadVideoJobs(); }
+    }
+
+    async function generateVideoJob(id) {
+      if(!adminSession) return alert('Admin session required.');
+      const {data,error}=await supabaseClient.functions.invoke('video-generator',{body:{job_id:id}});
+      if(error) alert(error.message); else { alert(data?.ok?'Video generation completed/submitted.':'Generation response received.'); loadVideoJobs(); }
+    }
+
+    function loadAutopilotProducts() {
+      const box=document.getElementById('autopilotProducts'); if(!box) return;
+      box.innerHTML=storeProducts.map(p=>`<div class="p-4 bg-slate-900/60 border border-slate-800 rounded-xl flex flex-col md:flex-row md:items-center md:justify-between gap-3"><div><b>${p.name}</b><div class="text-xs text-slate-400">Price ₹${Number(p.price||0).toLocaleString('en-IN')} · Stock ${p.stock_quantity??0}</div></div><label class="text-xs flex items-center gap-2"><input type="checkbox" onchange="saveAutopilot('${p.id}',this.checked)"> Enable AI Autopilot</label></div>`).join('');
+      const sel=document.getElementById('videoProductSelect'); if(sel) sel.innerHTML=storeProducts.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+    }
+
+    async function saveAutopilot(productId,enabled) {
+      const payload={product_id:productId,enabled,updated_by:adminSession?.user?.id};
+      const {error}=await supabaseClient.from('product_autopilot_settings').upsert(payload,{onConflict:'product_id'});
+      if(error) alert(error.message);
+    }
+
+    async function runProductHunter() {
+      const q=document.getElementById('hunterQuery').value.trim()||'general ecommerce products';
+      const box=document.getElementById('hunterResults');
+      box.innerHTML='<div class="p-4 bg-dark-card border border-dark-border rounded-xl text-sm text-slate-400">Research record created. Connect an authorized supplier/feed source for live candidate discovery.</div>';
+      const {error}=await supabaseClient.from('product_hunter_runs').insert({query:q,source:'manual_research',product_name:q,status:'researching',ai_reason:'Awaiting authorized supplier/feed data.'});
+      if(error) box.innerHTML='<div class="p-4 bg-rose-500/10 text-rose-300 rounded-xl text-sm">'+error.message+'</div>';
+    }
+
+    function calculateSellingPrice() {
+      const cost=Number(document.getElementById('priceCost').value)||0, shipping=Number(document.getElementById('priceShipping').value)||0, fixed=Number(document.getElementById('priceFixedFee').value)||0;
+      const fee=(Number(document.getElementById('pricePlatformFee').value)||0)/100, margin=(Number(document.getElementById('priceMargin').value)||0)/100;
+      const denom=1-fee-margin; const result=document.getElementById('pricingResult');
+      if(denom<=0){result.textContent='Invalid: platform fee + margin must be below 100%';return;}
+      result.textContent='Recommended selling price: ₹'+((cost+shipping+fixed)/denom).toFixed(2);
     }
 
     function switchAdminTab(tabKey) {
