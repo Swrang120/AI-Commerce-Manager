@@ -1050,6 +1050,15 @@
       updateCartUI();
       updateWishlistUI();
       initAdminData();
+
+      const portal = new URLSearchParams(window.location.search).get('portal');
+      if (portal === 'admin' || portal === 'automation') {
+        setTimeout(() => toggleAdminView(), 250);
+        setTimeout(() => {
+          if (portal === 'automation') switchAdminTab('autopilot');
+          else switchAdminTab('overview');
+        }, 500);
+      }
     });
 
     // ================= PRODUCT CATALOG & FILTERING =================
