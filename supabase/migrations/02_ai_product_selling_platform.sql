@@ -142,3 +142,8 @@ FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 INSERT INTO public.video_settings (enabled)
 SELECT true
 WHERE NOT EXISTS (SELECT 1 FROM public.video_settings);
+
+
+-- The trigger is server-side only; do not expose it as a public RPC.
+REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM anon;
+REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM authenticated;
