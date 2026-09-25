@@ -73,7 +73,7 @@ fun StoreTopBar(
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(
-                            text = "Nexus AI Commerce",
+                            text = "E-commerce Shoping",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
