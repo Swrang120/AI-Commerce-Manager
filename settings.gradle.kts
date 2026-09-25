@@ -22,6 +22,6 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "Nexus AI Commerce"
+rootProject.name = "E-commerce Shoping"
 
 include(":app")
