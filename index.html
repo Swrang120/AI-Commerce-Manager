@@ -1819,6 +1819,14 @@
       finally{btn.disabled=false;btn.textContent='Login';}
     }
 
+    function getAuthRedirectUrl(){
+      const productionUrl='https://swrang120.github.io/AI-Commerce-Manager/';
+      const current=window.location.origin+window.location.pathname;
+      return window.location.hostname==='localhost' || window.location.hostname==='127.0.0.1'
+        ? productionUrl
+        : current;
+    }
+
     async function customerSignup(event){
       event.preventDefault();
       const name=document.getElementById('customerSignupName').value.trim();
@@ -1830,7 +1838,7 @@
       if(password!==confirm){msg.className='text-xs text-rose-400';msg.textContent='Passwords do not match.';return;}
       try{
         if(!supabaseClient) throw new Error('Supabase is not available.');
-        const {data,error}=await supabaseClient.auth.signUp({email,password,options:{data:{full_name:name}}});
+        const {data,error}=await supabaseClient.auth.signUp({email,password,options:{emailRedirectTo:getAuthRedirectUrl(),data:{full_name:name}}});
         if(error) throw error;
         if(data.user && data.session) await ensureCustomerProfile(data.user,name);
         msg.className='text-xs text-emerald-400';
@@ -1845,7 +1853,7 @@
       const msg=document.getElementById('customerForgotMessage'); msg.classList.remove('hidden');
       try{
         if(!supabaseClient) throw new Error('Supabase is not available.');
-        const redirectTo=window.location.origin+window.location.pathname;
+        const redirectTo=getAuthRedirectUrl();
         const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo});
         if(error) throw error;
         msg.className='text-xs text-emerald-400'; msg.textContent='Password reset email sent. Open it from your Gmail/email.';
