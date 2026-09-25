@@ -1,4 +1,5 @@
 name: Build Android APK and Deploy Web Store
+# Pages deployment is intentionally independent from Android build success.
 
 on:
   push:
