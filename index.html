@@ -228,12 +228,7 @@
   </main>
 
   <!-- ================= ADMIN MANAGEMENT VIEW ================= -->
-        <section id="customerVideoLibrary" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div class="flex items-end justify-between gap-4 mb-5"><div><h2 class="text-xl font-bold text-white">AI Product Videos</h2><p class="text-xs text-slate-400">Premium product videos for viewing, download and sharing.</p></div><button onclick="loadPublicVideos()" class="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs">Refresh</button></div>
-        <div id="publicVideoGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"><div class="text-xs text-slate-500">Loading videos…</div></div>
-      </section>
-
-<main id="adminView" class="hidden flex-1 pb-16">
+  <main id="adminView" class="hidden flex-1 pb-16">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Admin Header -->
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-dark-border">
@@ -269,7 +264,7 @@
         <button onclick="switchAdminTab('hunter')" id="tab-hunter" class="admin-tab-btn px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">AI Product Hunter</button>
         <button onclick="switchAdminTab('pricing')" id="tab-pricing" class="admin-tab-btn px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">Pricing & Margin</button>
         <button onclick="switchAdminTab('videos')" id="tab-videos" class="admin-tab-btn px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">AI Videos</button>
-        <button onclick="switchAdminTab('autopilot')" id="tab-autopilot" class="admin-tab-btn px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">AI Autopilot</button>
+        <button onclick="switchAdminTab('autopilot')" id="tab-autopilot" class="admin-tab-btn px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">Autopilot</button>
       </div>
 
       <!-- Tab 1: Overview -->
@@ -459,90 +454,6 @@
           </div>
         </div>
       </div>
-
-      <!-- AI PRODUCT SELLING WORKSPACE -->
-      <div id="adminPanel-hunter" class="admin-panel hidden space-y-5">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div class="lg:col-span-2 bg-dark-card border border-dark-border rounded-2xl p-5">
-            <div class="flex items-center gap-3 mb-4">
-              <div class="w-10 h-10 rounded-xl bg-brand-600/20 flex items-center justify-center"><i data-lucide="link" class="w-5 h-5 text-brand-400"></i></div>
-              <div><h3 class="font-bold text-white">Import Product by Link</h3><p class="text-xs text-slate-400">Paste an authorized supplier/affiliate product URL. The system stores it for processing and approval.</p></div>
-            </div>
-            <form onsubmit="importProductLink(event)" class="space-y-3">
-              <input id="productSourceUrl" type="url" required placeholder="https://supplier.example/product/..." class="w-full bg-slate-900 border border-dark-border rounded-xl px-4 py-3 text-sm text-white">
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <input id="importProductName" placeholder="Product name" class="bg-slate-900 border border-dark-border rounded-xl px-3 py-2.5 text-sm text-white">
-                <input id="importCost" type="number" step="0.01" min="0" placeholder="Supplier cost ₹" class="bg-slate-900 border border-dark-border rounded-xl px-3 py-2.5 text-sm text-white">
-                <input id="importMargin" type="number" step="0.1" min="0" value="20" placeholder="Target margin %" class="bg-slate-900 border border-dark-border rounded-xl px-3 py-2.5 text-sm text-white">
-              </div>
-              <div class="flex flex-wrap gap-2">
-                <button class="px-4 py-2.5 bg-brand-600 hover:bg-brand-500 rounded-xl text-sm font-semibold text-white">Import for AI Processing</button>
-                <button type="button" onclick="runProductHunter()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-sm font-semibold text-white">Find Trending Products</button>
-              </div>
-            </form>
-            <div id="importResult" class="mt-4 text-xs text-slate-400"></div>
-          </div>
-          <div class="bg-dark-card border border-dark-border rounded-2xl p-5">
-            <h3 class="font-bold text-white">Product Hunter</h3>
-            <p class="text-xs text-slate-400 mt-1">Only approved/authorized feeds can be used for live discovery.</p>
-            <input id="hunterQuery" class="mt-4 w-full bg-slate-900 border border-dark-border rounded-xl px-3 py-2.5 text-sm text-white" placeholder="e.g. trending audio products">
-            <button onclick="runProductHunter()" class="mt-3 w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-semibold">Run Research</button>
-            <div id="hunterResults" class="mt-4 text-xs"></div>
-          </div>
-        </div>
-        <div class="bg-dark-card border border-dark-border rounded-2xl p-5">
-          <h3 class="font-bold text-white mb-3">Research / Approval Queue</h3>
-          <div id="hunterQueue" class="space-y-2"><span class="text-xs text-slate-500">No research loaded yet.</span></div>
-        </div>
-      </div>
-
-      <div id="adminPanel-pricing" class="admin-panel hidden">
-        <div class="max-w-3xl bg-dark-card border border-dark-border rounded-2xl p-5">
-          <h3 class="font-bold text-white">Automatic Pricing & Margin</h3>
-          <p class="text-xs text-slate-400 mt-1">Supplier cost + shipping + fixed fee, then platform fee and desired margin.</p>
-          <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4">
-            <input id="priceCost" type="number" step=".01" placeholder="Cost ₹" class="bg-slate-900 border border-dark-border rounded-lg p-2.5 text-sm">
-            <input id="priceShipping" type="number" step=".01" placeholder="Shipping ₹" class="bg-slate-900 border border-dark-border rounded-lg p-2.5 text-sm">
-            <input id="priceFixedFee" type="number" step=".01" placeholder="Fixed fee ₹" class="bg-slate-900 border border-dark-border rounded-lg p-2.5 text-sm">
-            <input id="pricePlatformFee" type="number" step=".1" placeholder="Platform fee %" class="bg-slate-900 border border-dark-border rounded-lg p-2.5 text-sm">
-            <input id="priceMargin" type="number" step=".1" value="20" placeholder="Margin %" class="bg-slate-900 border border-dark-border rounded-lg p-2.5 text-sm">
-          </div>
-          <button onclick="calculateSellingPrice()" class="mt-4 px-4 py-2.5 bg-brand-600 rounded-lg text-sm font-semibold">Calculate Selling Price</button>
-          <div id="pricingResult" class="mt-4 p-4 rounded-xl bg-slate-900 text-brand-300 font-bold">Enter costs to calculate.</div>
-        </div>
-      </div>
-
-      <div id="adminPanel-videos" class="admin-panel hidden space-y-5">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div class="lg:col-span-2 bg-dark-card border border-dark-border rounded-2xl p-5">
-            <h3 class="font-bold text-white">AI Product Video Generator</h3>
-            <p class="text-xs text-slate-400 mt-1">Create premium product-focused video jobs. No fake specifications or claims.</p>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
-              <select id="videoProductSelect" class="bg-slate-900 border border-dark-border rounded-lg p-2.5 text-sm text-white"></select>
-              <select id="videoAspect" class="bg-slate-900 border border-dark-border rounded-lg p-2.5 text-sm text-white"><option>9:16</option><option>16:9</option><option>1:1</option></select>
-              <button onclick="queueSelectedVideo()" class="bg-brand-600 rounded-lg text-sm font-semibold">Queue Video</button>
-            </div>
-            <div class="mt-3 p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-200">Daily scheduling is controlled server-side through video_settings. The video provider must be configured before a real video file can be generated.</div>
-          </div>
-          <div class="bg-dark-card border border-dark-border rounded-2xl p-5">
-            <h3 class="font-bold text-white">Video Library</h3>
-            <p class="text-xs text-slate-400 mt-1">Generated/public videos appear here for customer viewing and download.</p>
-          </div>
-        </div>
-        <div id="videoJobsList" class="space-y-3"></div>
-      </div>
-
-      <div id="adminPanel-autopilot" class="admin-panel hidden space-y-5">
-        <div class="bg-dark-card border border-dark-border rounded-2xl p-5">
-          <div class="flex items-center justify-between gap-4">
-            <div><h3 class="font-bold text-white">AI Autopilot</h3><p class="text-xs text-slate-400">Enable per-product price/stock monitoring, AI copy, marketing and video tasks.</p></div>
-            <span class="text-xs px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400">Server-backed settings</span>
-          </div>
-          <div id="autopilotProducts" class="mt-4 space-y-3"></div>
-        </div>
-      </div>
-
-      <div id="adminPanel-product-import" class="admin-panel hidden"></div>
 
     </div>
   </main>
@@ -1136,7 +1047,6 @@
       lucide.createIcons();
       renderCategoryPills();
       fetchSupabaseProducts();
-      loadPublicVideos();
       updateCartUI();
       updateWishlistUI();
       initAdminData();
@@ -1819,7 +1729,7 @@
     }
 
     // ================= ADMIN PORTAL OPERATIONS =================
-    async async function toggleAdminView() {
+    async function toggleAdminView() {
       if (!isAdminMode) {
         const { data } = supabaseClient ? await supabaseClient.auth.getSession() : { data: { session: null } };
         if (!data.session) {
@@ -1995,14 +1905,6 @@
       } finally { btn.disabled=false; btn.textContent='Sign in to Dashboard'; }
     }
 
-async function loadPublicVideos() {
-  const grid=document.getElementById('publicVideoGrid'); if(!grid||!supabaseClient)return;
-  const {data,error}=await supabaseClient.from('video_jobs').select('id,title,description,video_url,thumbnail_url').eq('is_public',true).eq('generation_status','published').order('published_at',{ascending:false}).limit(24);
-  if(error){grid.innerHTML='<div class="text-xs text-rose-400">'+error.message+'</div>';return;}
-  grid.innerHTML=(data||[]).map(v=>'<article class="bg-dark-card border border-dark-border rounded-2xl overflow-hidden"><div class="aspect-video bg-slate-900 flex items-center justify-center">'+(v.thumbnail_url?'<img src="'+v.thumbnail_url+'" class="w-full h-full object-cover">':'<i data-lucide="play-circle" class="w-10 h-10 text-brand-400"></i>')+'</div><div class="p-4"><h3 class="font-bold text-white text-sm">'+v.title+'</h3><p class="text-xs text-slate-400 mt-1">'+(v.description||'')+'</p>'+(v.video_url?'<a href="'+v.video_url+'" target="_blank" class="inline-block mt-3 px-3 py-2 bg-brand-600 rounded-lg text-xs font-semibold">Watch / Download</a>':'')+'</div></article>').join('')||'<div class="text-xs text-slate-500">No published product videos yet.</div>';
-  lucide.createIcons();
-}
-
     async function loadVideoJobs() {
       const list=document.getElementById('videoJobsList'); if(!list || !supabaseClient) return;
       const {data,error}=await supabaseClient.from('video_jobs').select('*').order('created_at',{ascending:false}).limit(50);
@@ -2041,28 +1943,6 @@ async function loadPublicVideos() {
       box.innerHTML='<div class="p-4 bg-dark-card border border-dark-border rounded-xl text-sm text-slate-400">Research record created. Connect an authorized supplier/feed source for live candidate discovery.</div>';
       const {error}=await supabaseClient.from('product_hunter_runs').insert({query:q,source:'manual_research',product_name:q,status:'researching',ai_reason:'Awaiting authorized supplier/feed data.'});
       if(error) box.innerHTML='<div class="p-4 bg-rose-500/10 text-rose-300 rounded-xl text-sm">'+error.message+'</div>';
-    }
-
-
-    async function importProductLink(event) {
-      event.preventDefault();
-      const url=document.getElementById('productSourceUrl').value.trim();
-      const suppliedName=document.getElementById('importProductName').value.trim();
-      const cost=Number(document.getElementById('importCost').value)||0;
-      const margin=Number(document.getElementById('importMargin').value)||20;
-      const result=document.getElementById('importResult');
-      if(!supabaseClient || !adminSession){result.innerHTML='<span class="text-rose-400">Admin session required.</span>';return;}
-      const domain=new URL(url).hostname.replace(/^www\./,'');
-      const name=suppliedName || decodeURIComponent(new URL(url).pathname.split('/').filter(Boolean).pop()||'Imported Product').replace(/[-_]+/g,' ');
-      const slug=name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'-'+Date.now().toString().slice(-6);
-      const selling=cost>0 ? Number((cost/(1-margin/100)).toFixed(2)) : 0;
-      const {data,error}=await supabaseClient.from('products').insert({name,slug,description:'Imported for AI processing. Verify supplier facts before publishing.',short_description:'Pending AI optimization and admin approval.',cost_price:cost,selling_price:selling,desired_profit:Math.max(0,selling-cost),profit_margin:margin,status:'pending_review',tags:[domain]}).select('id').single();
-      if(error){result.innerHTML='<span class="text-rose-400">'+error.message+'</span>';return;}
-      const source=await supabaseClient.from('product_sources').insert({product_id:data.id,source_name:domain,source_url:url,supplier_price:cost,raw_data:{import_method:'authorized_link',domain}});
-      if(source.error){result.innerHTML='<span class="text-amber-400">Product created, but source record failed: '+source.error.message+'</span>';return;}
-      result.innerHTML='<span class="text-emerald-400">Imported as Pending Approval. AI optimization can now be applied after supplier data is verified.</span>';
-      document.getElementById('productSourceUrl').value='';
-      fetchSupabaseProducts();
     }
 
     function calculateSellingPrice() {
