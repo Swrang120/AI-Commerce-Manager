@@ -79,7 +79,6 @@ jobs:
   # =========================================================================
   deploy-web:
     name: Deploy Web Storefront to GitHub Pages
-    needs: build-android
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     environment:
