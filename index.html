@@ -881,11 +881,21 @@
       <form id="customerSignupForm" onsubmit="customerSignup(event)" class="hidden space-y-3">
         <input id="customerSignupName" type="text" required placeholder="Full Name" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white">
         <input id="customerSignupEmail" type="email" required placeholder="Gmail / Email" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white">
-        <input id="customerSignupPassword" type="password" minlength="6" required placeholder="Password" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white">
+        <input id="customerSignupPassword" type="password" minlength="6" required placeholder="Create Password" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white">
         <input id="customerSignupConfirm" type="password" minlength="6" required placeholder="Confirm Password" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white">
+        <p class="text-[11px] text-slate-400">Supabase will send a 6-digit OTP to your Gmail/email.</p>
         <p id="customerSignupMessage" class="hidden text-xs"></p>
-        <button class="w-full py-2.5 bg-brand-600 rounded-xl text-sm font-bold text-white">Create Account</button>
+        <button id="customerSignupBtn" class="w-full py-2.5 bg-brand-600 rounded-xl text-sm font-bold text-white">Send OTP</button>
         <button type="button" onclick="showCustomerLogin()" class="w-full py-2 text-xs text-slate-400">Back to Login</button>
+      </form>
+      <form id="customerOtpForm" onsubmit="verifyCustomerSignupOtp(event)" class="hidden space-y-3">
+        <p class="text-xs text-slate-300">Enter the 6-digit OTP sent to:</p>
+        <p id="customerOtpEmail" class="text-sm font-bold text-white"></p>
+        <input id="customerSignupOtp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required placeholder="6-digit OTP" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white tracking-widest text-center">
+        <p id="customerOtpMessage" class="hidden text-xs"></p>
+        <button id="customerOtpBtn" class="w-full py-2.5 bg-brand-600 rounded-xl text-sm font-bold text-white">Verify OTP</button>
+        <button type="button" onclick="resendCustomerSignupOtp()" class="w-full py-2 text-xs text-brand-400">Resend OTP</button>
+        <button type="button" onclick="showCustomerSignup()" class="w-full py-1 text-xs text-slate-500">Change Email</button>
       </form>
       <form id="customerForgotForm" onsubmit="sendCustomerReset(event)" class="hidden space-y-3">
         <input id="customerForgotEmail" type="email" required placeholder="Your Gmail / Email" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white">
@@ -1793,7 +1803,13 @@
       lucide.createIcons();
     }
     function showCustomerLogin(){setAuthPanel('Welcome back','Login to manage your orders and profile.','customerLoginForm');}
-    function showCustomerSignup(){setAuthPanel('Create account','Sign up with your name, Gmail/email and password.','customerSignupForm');}
+    function showCustomerSignup(){setAuthPanel('Create account','Enter your details. We will send a 6-digit Gmail/email OTP.','customerSignupForm');}
+    function showCustomerOtp(){
+      setAuthPanel('Verify your email','Enter the 6-digit OTP sent by Supabase.','customerOtpForm');
+      const email=window.__customerOtpEmail || document.getElementById('customerSignupEmail').value.trim();
+      document.getElementById('customerOtpEmail').textContent=email;
+      document.getElementById('customerSignupOtp').focus();
+    }
     function showCustomerForgot(){setAuthPanel('Reset password','We will send a secure password-reset email.','customerForgotForm');}
     function showCustomerReset(){setAuthPanel('Set new password','Choose a new password for your account.','customerResetForm');}
 
@@ -1830,21 +1846,93 @@
     async function customerSignup(event){
       event.preventDefault();
       const name=document.getElementById('customerSignupName').value.trim();
-      const email=document.getElementById('customerSignupEmail').value.trim();
+      const email=document.getElementById('customerSignupEmail').value.trim().toLowerCase();
       const password=document.getElementById('customerSignupPassword').value;
       const confirm=document.getElementById('customerSignupConfirm').value;
       const msg=document.getElementById('customerSignupMessage');
+      const btn=document.getElementById('customerSignupBtn');
       msg.classList.remove('hidden');
       if(password!==confirm){msg.className='text-xs text-rose-400';msg.textContent='Passwords do not match.';return;}
+      if(password.length<6){msg.className='text-xs text-rose-400';msg.textContent='Password must be at least 6 characters.';return;}
       try{
         if(!supabaseClient) throw new Error('Supabase is not available.');
-        const {data,error}=await supabaseClient.auth.signUp({email,password,options:{emailRedirectTo:getAuthRedirectUrl(),data:{full_name:name}}});
+        btn.disabled=true;
+        btn.textContent='Sending OTP...';
+        const {error}=await supabaseClient.auth.signInWithOtp({
+          email:email,
+          options:{shouldCreateUser:true,data:{full_name:name}}
+        });
         if(error) throw error;
-        if(data.user && data.session) await ensureCustomerProfile(data.user,name);
+        window.__customerOtpEmail=email;
+        window.__customerSignupName=name;
+        window.__customerSignupPassword=password;
+        showCustomerOtp();
+      }catch(e){
+        msg.className='text-xs text-rose-400';
+        msg.textContent=e.message||'Could not send OTP.';
+      }finally{
+        btn.disabled=false;
+        btn.textContent='Send OTP';
+      }
+    }
+
+    async function verifyCustomerSignupOtp(event){
+      event.preventDefault();
+      const email=(window.__customerOtpEmail || '').toLowerCase();
+      const token=document.getElementById('customerSignupOtp').value.trim();
+      const msg=document.getElementById('customerOtpMessage');
+      const btn=document.getElementById('customerOtpBtn');
+      msg.classList.remove('hidden');
+      if(!/^\d{6}$/.test(token)){
+        msg.className='text-xs text-rose-400';
+        msg.textContent='Enter the 6-digit OTP.';
+        return;
+      }
+      try{
+        if(!supabaseClient) throw new Error('Supabase is not available.');
+        btn.disabled=true;
+        btn.textContent='Verifying...';
+        const {data,error}=await supabaseClient.auth.verifyOtp({email:email,token:token,type:'email'});
+        if(error) throw error;
+        if(!data.user) throw new Error('Verification failed. Please request a new OTP.');
+        customerSession=data.session;
+        const password=window.__customerSignupPassword;
+        if(password){
+          const {error:passwordError}=await supabaseClient.auth.updateUser({password:password});
+          if(passwordError) throw passwordError;
+        }
+        await ensureCustomerProfile(data.user,window.__customerSignupName || '');
         msg.className='text-xs text-emerald-400';
-        msg.textContent=data.session ? 'Account created successfully.' : 'Account created. Check your Gmail/email for the verification link.';
-        if(data.session){setTimeout(closeCustomerAuth,700);}
-      }catch(e){msg.className='text-xs text-rose-400';msg.textContent=e.message||'Signup failed.';}
+        msg.textContent='Email verified. Account created successfully.';
+        window.__customerSignupPassword=null;
+        window.__customerSignupName=null;
+        setTimeout(function(){closeCustomerAuth();fetchSupabaseProducts();},700);
+      }catch(e){
+        msg.className='text-xs text-rose-400';
+        msg.textContent=e.message||'OTP verification failed.';
+      }finally{
+        btn.disabled=false;
+        btn.textContent='Verify OTP';
+      }
+    }
+
+    async function resendCustomerSignupOtp(){
+      const email=(window.__customerOtpEmail || '').trim().toLowerCase();
+      const msg=document.getElementById('customerOtpMessage');
+      if(!email) return;
+      try{
+        const {error}=await supabaseClient.auth.signInWithOtp({
+          email:email,
+          options:{shouldCreateUser:true,data:{full_name:window.__customerSignupName || ''}}
+        });
+        if(error) throw error;
+        msg.className='text-xs text-emerald-400';
+        msg.textContent='New OTP sent. Check your Gmail/email.';
+        document.getElementById('customerSignupOtp').value='';
+      }catch(e){
+        msg.className='text-xs text-rose-400';
+        msg.textContent=e.message||'Could not resend OTP.';
+      }
     }
 
     async function sendCustomerReset(event){
