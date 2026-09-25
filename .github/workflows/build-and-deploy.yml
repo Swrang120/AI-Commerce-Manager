@@ -49,7 +49,7 @@ jobs:
 
       - name: Prepare Keystore and Environment
         run: |
-          # Restore debug.keystore from base64 if not already present
+          # Restore debug.keystore from base64 if present; otherwise let Android use its standard debug keystore.
           if [ -f "debug.keystore.base64" ] && [ ! -f "debug.keystore" ]; then
             echo "Restoring debug.keystore from base64..."
             base64 -d debug.keystore.base64 > debug.keystore
@@ -61,11 +61,13 @@ jobs:
             cp .env.example .env
           fi
 
-          # Ensure gradlew has execution rights
-          chmod +x ./gradlew
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.14"
 
       - name: Build Android Debug APK
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        run: gradle assembleDebug --no-daemon --stacktrace
 
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
