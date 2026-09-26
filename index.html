@@ -1706,7 +1706,7 @@
 
     function getProductImages(product){
       const raw=Array.isArray(product?.images)?product.images:[];
-      const urls=raw.filter(x=>typeof x==='string' && /^https?:\\/\\//i.test(x));
+      const urls=raw.filter(x=>typeof x==='string' && /^https?:\/\//i.test(x));
       if(product?.image_url && !urls.includes(product.image_url)) urls.unshift(product.image_url);
       return [...new Set(urls)];
     }
