@@ -111,7 +111,7 @@ Deno.serve(async (req: Request) => {
 
     const body = await req.json();
     if (!body.job_id) return json({ error: "job_id is required" }, 400);
-    const { data: job, error: jobError } = await admin.from("video_jobs").select("*,products(id,name,description,short_description,price,images)").eq("id", body.job_id).single();
+    const { data: job, error: jobError } = await admin.from("video_jobs").select("*,products(id,name,description,short_description,selling_price,images)").eq("id", body.job_id).single();
     if (jobError || !job) return json({ error: "Video job not found" }, 404);
 
     if (job.generation_status === "queued") {
@@ -135,7 +135,7 @@ Deno.serve(async (req: Request) => {
           "Localized title: " + localizedTitle,
           "Localized description: " + localizedDescription,
           "Product name: " + product.name,
-          "Current price: " + String(product.price ?? "")
+          "Current price: " + String(product.selling_price ?? "")
         ].join("\n");
       const operation = await startVeo(prompt, await imageFromProduct(product));
       await admin.from("video_jobs").update({
