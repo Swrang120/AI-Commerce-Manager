@@ -30,7 +30,10 @@ async function uploadJob(jobId:string){
   const vr=await fetch(job.video_url);
   if(!vr.ok)throw new Error("Could not fetch the R2 video.");
   const bytes=new Uint8Array(await vr.arrayBuffer());
-  const metadata={snippet:{title:String(job.title||"E-commerce Shoping Product Video").slice(0,100),description:String(job.description||"AI product video created by E-commerce Shoping.").slice(0,5000),categoryId:"22",tags:["E-commerce Shoping","product video","shopping"]},status:{privacyStatus:"private",selfDeclaredMadeForKids:false,containsSyntheticMedia:true}};
+  const localizedTitle = job.localized_title || job.title || "E-commerce Shoping Product Video";
+  const localizedDescription = job.localized_description || job.description || "AI product video created by E-commerce Shoping.";
+  const localeTag = [job.language_code, job.country_code].filter(Boolean).join("-");
+  const metadata={snippet:{title:String(localizedTitle).slice(0,100),description:String(localizedDescription).slice(0,5000),categoryId:"22",tags:["E-commerce Shoping","product video","shopping",...(localeTag?[localeTag]:[])]},status:{privacyStatus:"private",selfDeclaredMadeForKids:false,containsSyntheticMedia:true}};
 
   const start=await fetch("https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status",{method:"POST",headers:{Authorization:"Bearer "+accessToken,"Content-Type":"application/json; charset=UTF-8","X-Upload-Content-Type":"video/mp4","X-Upload-Content-Length":String(bytes.byteLength)},body:JSON.stringify(metadata)});
   const st=await start.text();
