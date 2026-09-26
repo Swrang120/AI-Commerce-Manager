@@ -1593,17 +1593,27 @@
       const adminSwitch = document.getElementById('viewToggleBtn');
       if (adminSwitch) adminSwitch.style.display = portal === 'admin' || portal === 'automation' ? 'none' : 'none';
 
-      // Admin is a separate portal loaded only through /admin.html.
-      // The outer admin login gate sets this session flag after successful login.
+      // Admin is a separate portal loaded through /admin.html.
+      // The admin page creates a real Supabase Auth session; this page reuses it.
       if (portal === 'admin' || portal === 'automation') {
-        const adminGate = sessionStorage.getItem('ecommerce_admin_session') === '1';
-        if (!adminGate) {
-          document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0b0f19;color:#fff;font-family:Arial,sans-serif"><div style="text-align:center;padding:24px"><h2>Admin authentication required</h2><p style="color:#94a3b8">Open the Admin website and sign in first.</p></div></div>';
+        if (!supabaseClient) {
+          document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0b0f19;color:#fff;font-family:Arial,sans-serif"><div style="text-align:center;padding:24px"><h2>Supabase unavailable</h2><p style="color:#94a3b8">Check the Supabase URL/key configuration.</p></div></div>';
           return;
         }
-
+        const {data:sessionData,error:sessionError}=await supabaseClient.auth.getSession();
+        if (sessionError || !sessionData?.session) {
+          document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0b0f19;color:#fff;font-family:Arial,sans-serif"><div style="text-align:center;padding:24px"><h2>Admin authentication required</h2><p style="color:#94a3b8">Open admin.html and sign in with the Supabase admin account.</p></div></div>';
+          return;
+        }
+        const {data:profile,error:profileError}=await supabaseClient.from('profiles').select('id,email,role,full_name').eq('id',sessionData.session.user.id).maybeSingle();
+        if (profileError || !profile || !['admin','manager'].includes(profile.role)) {
+          await supabaseClient.auth.signOut();
+          document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0b0f19;color:#fff;font-family:Arial,sans-serif"><div style="text-align:center;padding:24px"><h2>Admin permission required</h2><p style="color:#94a3b8">The signed-in Supabase profile must have role = admin or manager.</p></div></div>';
+          return;
+        }
         isAdminMode = true;
-        adminSession = { source: 'admin-gate', authenticated: true };
+        adminSession = sessionData.session;
+        adminProfile = profile;
         setSidebarMode(true);
         document.getElementById('customerView')?.classList.add('hidden');
         document.getElementById('adminView')?.classList.remove('hidden');
@@ -2825,8 +2835,19 @@
       const msg=document.getElementById('adminProductMessage');
       if(msg){msg.className='mb-3 p-3 rounded-xl text-xs bg-slate-800 text-slate-300';msg.textContent=publish?'Publishing product…':'Unpublishing product…';msg.classList.remove('hidden');}
       try{
-        const {error}=await supabaseClient.from('products').update({status:publish?'active':'draft',updated_at:new Date().toISOString()}).eq('id',productId);
+        const {data:me,error:meError}=await supabaseClient.auth.getUser();
+        if(meError||!me?.user)throw new Error('Supabase admin session expired. Please login again.');
+        const {data:role,error:roleError}=await supabaseClient.from('profiles').select('role').eq('id',me.user.id).maybeSingle();
+        if(roleError)throw roleError;
+        if(!role||!['admin','manager'].includes(role.role))throw new Error('Your Supabase profile is not authorized to publish products.');
+        const {data:updated,error}=await supabaseClient.from('products').update({status:publish?'active':'draft',updated_at:new Date().toISOString()}).eq('id',productId).select('id,status').maybeSingle();
         if(error)throw error;
+        if(!updated)throw new Error('No product was updated. Check the products RLS policy for admin/manager.');
+        if(publish){
+          const {data:settings}=await supabaseClient.from('product_autopilot_settings').select('product_id,enabled,video_generation').eq('product_id',productId).maybeSingle();
+          if(!settings) await supabaseClient.from('product_autopilot_settings').insert({product_id:productId,enabled:true,video_generation:true,updated_by:me.user.id});
+          else if(settings.enabled!==true || settings.video_generation!==true) await supabaseClient.from('product_autopilot_settings').update({enabled:true,video_generation:true,updated_by:me.user.id,updated_at:new Date().toISOString()}).eq('product_id',productId);
+        }
         if(msg){msg.className='mb-3 p-3 rounded-xl text-xs bg-emerald-500/10 border border-emerald-500/20 text-emerald-300';msg.textContent=publish?'Product published. It can now appear on the customer website.':'Product unpublished from the customer website.';}
         await loadAdminProducts();
         await fetchSupabaseProducts();
@@ -3657,6 +3678,7 @@
       const {error}=await q;
       const msg=document.getElementById('videoAutomationMessage');
       if(error){if(msg)msg.textContent=error.message;return;}
+      // When automation is enabled, the product-video scheduler will pick eligible active products.
       if(msg)msg.textContent='Saved to Supabase. Server scheduler uses these settings when configured.';
     }
 
