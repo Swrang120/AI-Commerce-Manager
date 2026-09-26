@@ -1589,13 +1589,15 @@
           .eq('status', 'active');
         if (!error && data && data.length > 0) {
           storeProducts = data.map(p => ({
+            ...p,
             id: p.id,
             name: p.name,
             slug: p.slug,
-            category: p.categories?.name || 'Electronics',
+            category: p.categories?.name || p.category || 'Electronics',
             price: Number(p.selling_price || 0),
             compare_at_price: Number(p.compare_at_price || p.selling_price || 0),
             stock_quantity: Number(p.stock_quantity || 0),
+            images: Array.isArray(p.images) ? p.images : [],
             image_url: Array.isArray(p.images) && p.images.length ? p.images[0] : INITIAL_PRODUCTS[0].image_url,
             short_description: p.short_description || p.description || ''
           }));
