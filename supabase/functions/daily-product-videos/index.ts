@@ -105,6 +105,17 @@ async function uploadR2(jobId: string, bytes: Uint8Array) {
   }));
   return `${r2PublicBaseUrl}/${key}`;
 }
+async function triggerYoutubeUpload(jobId: string) {
+  try {
+    await fetch(`${supabaseUrl}/functions/v1/youtube-upload`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + serviceRoleKey },
+      body: JSON.stringify({ job_id: jobId })
+    });
+  } catch {
+    // Keep the R2 video published even if YouTube is not configured or temporarily unavailable.
+  }
+}
 
 async function pollAndPublish(job: any) {
   if (!job.provider_operation_id) return false;
@@ -123,6 +134,7 @@ async function pollAndPublish(job: any) {
     error_message: null,
     updated_at: now
   }).eq("id", job.id);
+  await triggerYoutubeUpload(job.id);
   return true;
 }
 
