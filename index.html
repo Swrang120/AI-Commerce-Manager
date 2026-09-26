@@ -664,22 +664,32 @@
         </div>
       </div>
 
-      <!-- Tab 5: Inventory & Price Audit -->
-      <div id="adminPanel-inventory" class="admin-panel hidden space-y-4">
+      <!-- Tab 5: Product Management + Inventory -->
+      <div id="adminPanel-inventory" class="admin-panel hidden space-y-5">
+        <div class="p-5 rounded-2xl bg-dark-card border border-dark-border">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <div>
+              <h3 class="text-base font-extrabold text-white">Product Management & Publishing</h3>
+              <p class="text-xs text-slate-400 mt-1">Admin can review every product and publish/unpublish it for the customer storefront.</p>
+            </div>
+            <button onclick="loadAdminProducts()" class="px-4 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs font-bold text-white">Refresh Products</button>
+          </div>
+          <div id="adminProductMessage" class="hidden mb-3 p-3 rounded-xl text-xs"></div>
+          <div id="adminProductsList" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div class="col-span-full p-8 text-center text-xs text-slate-500">Loading products…</div>
+          </div>
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="bg-dark-card border border-dark-border rounded-xl p-4">
             <h3 class="text-sm font-bold text-white mb-2">Stock History (stock_history)</h3>
             <p class="text-xs text-slate-400 mb-3">Real adjustments logged with source data:</p>
-            <div id="stockAuditLogs" class="space-y-2 text-xs custom-scroll max-h-72 overflow-y-auto">
-              <!-- populated by JS -->
-            </div>
+            <div id="stockAuditLogs" class="space-y-2 text-xs custom-scroll max-h-72 overflow-y-auto"></div>
           </div>
           <div class="bg-dark-card border border-dark-border rounded-xl p-4">
             <h3 class="text-sm font-bold text-white mb-2">Price History (price_history)</h3>
             <p class="text-xs text-slate-400 mb-3">Previous vs Current price comparisons:</p>
-            <div id="priceAuditLogs" class="space-y-2 text-xs custom-scroll max-h-72 overflow-y-auto">
-              <!-- populated by JS -->
-            </div>
+            <div id="priceAuditLogs" class="space-y-2 text-xs custom-scroll max-h-72 overflow-y-auto"></div>
           </div>
         </div>
       </div>
@@ -1601,6 +1611,7 @@
         document.getElementById('customerAuthBtn')?.classList.add('hidden');
         document.getElementById('sidebarRoleLabel').textContent = 'Administrator Portal';
         loadAdminDashboard();
+        loadAdminProducts();
         loadVideoJobs();
         loadAutopilotProducts();
 
@@ -2435,6 +2446,7 @@
         document.getElementById('customerAuthBtn')?.classList.add('hidden');
         toggleText.innerText = "Switch to Customer Storefront";
         loadAdminDashboard();
+        loadAdminProducts();
       } else {
         custView.classList.remove('hidden');
         adminView.classList.add('hidden');
@@ -2771,6 +2783,55 @@
       renderModerationReviews();
       renderCouponsAdmin();
       renderAutomationRuns();
+    }
+
+    async function loadAdminProducts(){
+      const box=document.getElementById('adminProductsList');
+      const msg=document.getElementById('adminProductMessage');
+      if(!box||!supabaseClient)return;
+      box.innerHTML='<div class="col-span-full p-8 text-center text-xs text-slate-500">Loading all products from Supabase…</div>';
+      try{
+        const {data,error}=await supabaseClient.from('products').select('*, categories(name)').order('created_at',{ascending:false});
+        if(error)throw error;
+        if(!data?.length){
+          box.innerHTML='<div class="col-span-full p-8 text-center text-xs text-slate-500">No products found in the products table.</div>';
+          return;
+        }
+        box.innerHTML=data.map(p=>{
+          const price=Number(p.selling_price??p.price??0);
+          const compare=Number(p.compare_at_price??price);
+          const image=Array.isArray(p.images)&&p.images[0]?p.images[0]:(p.image_url||'');
+          const status=String(p.status||'draft').toLowerCase();
+          const published=status==='active';
+          const safeId=String(p.id).replace(/'/g,"\\'");
+          return '<article class="rounded-2xl bg-slate-900/70 border border-slate-800 overflow-hidden">'+
+            '<div class="h-44 bg-white flex items-center justify-center overflow-hidden">'+(image?'<img src="'+image.replace(/"/g,'&quot;')+'" class="w-full h-full object-contain" alt="">':'<span class="text-xs text-slate-500">No image</span>')+'</div>'+
+            '<div class="p-4 space-y-2">'+
+            '<div class="flex items-start justify-between gap-2"><h4 class="text-sm font-extrabold text-white line-clamp-2">'+String(p.name||'Untitled').replace(/</g,'&lt;')+'</h4><span class="shrink-0 px-2 py-1 rounded-lg text-[10px] font-bold '+(published?'bg-emerald-500/15 text-emerald-400':'bg-amber-500/15 text-amber-400')+'">'+(published?'PUBLISHED':'DRAFT')+'</span></div>'+
+            '<div class="text-xs text-slate-400">'+String(p.categories?.name||p.category||'Uncategorized')+' · ₹'+price.toLocaleString('en-IN')+(compare>price?' · MRP ₹'+compare.toLocaleString('en-IN'):'')+'</div>'+
+            '<div class="flex gap-2 pt-2">'+
+            '<button onclick="setProductPublishStatus(\\''+safeId+'\\', '+(!published)+')" class="flex-1 px-3 py-2 rounded-xl '+(published?'bg-rose-600 hover:bg-rose-500':'bg-emerald-600 hover:bg-emerald-500')+' text-white text-xs font-extrabold">'+(published?'Unpublish':'Publish to Customer')+'</button>'+
+            '<button onclick="openProductDetailModal(\\''+safeId+'\\')" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold">Preview</button>'+
+            '</div></div></article>';
+        }).join('');
+      }catch(e){
+        box.innerHTML='<div class="col-span-full p-5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-300">Could not load products: '+String(e.message||e).replace(/</g,'&lt;')+'</div>';
+      }
+    }
+
+    async function setProductPublishStatus(productId,publish){
+      if(!adminSession||!supabaseClient)return alert('Admin session required.');
+      const msg=document.getElementById('adminProductMessage');
+      if(msg){msg.className='mb-3 p-3 rounded-xl text-xs bg-slate-800 text-slate-300';msg.textContent=publish?'Publishing product…':'Unpublishing product…';msg.classList.remove('hidden');}
+      try{
+        const {error}=await supabaseClient.from('products').update({status:publish?'active':'draft',updated_at:new Date().toISOString()}).eq('id',productId);
+        if(error)throw error;
+        if(msg){msg.className='mb-3 p-3 rounded-xl text-xs bg-emerald-500/10 border border-emerald-500/20 text-emerald-300';msg.textContent=publish?'Product published. It can now appear on the customer website.':'Product unpublished from the customer website.';}
+        await loadAdminProducts();
+        await fetchSupabaseProducts();
+      }catch(e){
+        if(msg){msg.className='mb-3 p-3 rounded-xl text-xs bg-rose-500/10 border border-rose-500/20 text-rose-300';msg.textContent='Publish failed: '+(e.message||e);}
+      }
     }
 
     // ITEM 25: MANUAL SUPPLIER FULFILLMENT WORKFLOW
