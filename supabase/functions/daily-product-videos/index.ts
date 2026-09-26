@@ -145,6 +145,29 @@ Deno.serve(async (req: Request) => {
       return json({ error: "Gemini/R2 storage secrets are not configured" }, 503);
     }
 
+    // Finish an already-processing generation before starting another job.
+    // Finish one previously started generation first.
+    const { data: pending } = await admin.from("video_jobs")
+      .select("*")
+      .eq("generation_status", "processing")
+      .not("provider_operation_id", "is", null)
+      .order("created_at", { ascending: true })
+      .limit(1);
+    if (pending?.[0]) {
+      try {
+        const finished = await pollAndPublish(pending[0]);
+        if (finished) return json({ ok: true, completed_job_id: pending[0].id, created: 0 });
+      } catch (error) {
+        await admin.from("video_jobs").update({
+          generation_status: "failed",
+          error_message: error instanceof Error ? error.message : "Video generation failed",
+          updated_at: new Date().toISOString()
+        }).eq("id", pending[0].id);
+      }
+    }
+
+
+
     // Global campaign queue: process one queued country/language variant per run.
     const { data: globalQueue } = await admin.from("video_jobs")
       .select("*,products(id,name,description,short_description,price,images)")
@@ -169,30 +192,10 @@ Deno.serve(async (req: Request) => {
           "Product name: "+product.name,
           "Current price: "+String(product.price??""),
           "Description: "+String(product.description??product.short_description??"")
-        ].join("\\n");
+        ].join("\n");
         const operation=await startVeo(prompt,await productImage(product));
         await admin.from("video_jobs").update({generation_status:"processing",generation_provider:"google-veo-3.1",provider_operation_id:operation,generation_prompt:prompt,duration_seconds:8,updated_at:new Date().toISOString()}).eq("id",job.id);
         return json({ok:true,global_job_id:job.id,status:"processing"});
-      }
-    }
-
-    // Finish one previously started generation first.
-    const { data: pending } = await admin.from("video_jobs")
-      .select("*")
-      .eq("generation_status", "processing")
-      .not("provider_operation_id", "is", null)
-      .order("created_at", { ascending: true })
-      .limit(1);
-    if (pending?.[0]) {
-      try {
-        const finished = await pollAndPublish(pending[0]);
-        if (finished) return json({ ok: true, completed_job_id: pending[0].id, created: 0 });
-      } catch (error) {
-        await admin.from("video_jobs").update({
-          generation_status: "failed",
-          error_message: error instanceof Error ? error.message : "Video generation failed",
-          updated_at: new Date().toISOString()
-        }).eq("id", pending[0].id);
       }
     }
 
