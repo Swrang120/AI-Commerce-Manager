@@ -1847,12 +1847,29 @@
     }
 
     // ================= CHECKOUT & RAZORPAY INTEGRATION =================
-    function openCheckoutModal() {
+    async function openCheckoutModal() {
       if (cart.length === 0) {
         alert("Your cart is empty.");
         return;
       }
       closeCartDrawer();
+
+      if (!customerSession) {
+        openCustomerAuth();
+        return;
+      }
+
+      await loadCustomerProfile();
+      const p=customerProfileData||{};
+      const u=customerSession.user||{};
+      document.getElementById('custName').value=p.full_name||u.user_metadata?.full_name||'';
+      document.getElementById('custEmail').value=u.email||'';
+      document.getElementById('custPhone').value=p.phone||u.phone||'';
+      document.getElementById('custStreet').value=[p.address_line1,p.address_line2,p.landmark].filter(Boolean).join(', ');
+      document.getElementById('custCity').value=p.city||'';
+      document.getElementById('custState').value=p.state||'';
+      document.getElementById('custPostal').value=p.postal_code||'';
+
       const subtotal = cart.reduce((acc, i) => acc + (i.price * i.quantity), 0);
       const shipping = subtotal > 999 ? 0 : 49;
       let discount = 0;
