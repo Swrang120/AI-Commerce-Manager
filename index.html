@@ -187,6 +187,15 @@
     #customerView .customer-footer button{display:block;text-align:left;width:100%;padding:2px 0}
     @media(max-width:1023px){#customerView .customer-about-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#customerView .customer-policy-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media(max-width:767px){#customerView .customer-mobile-search-wrap{display:block;padding:10px 12px 2px}#customerView .customer-about-grid{grid-template-columns:1fr}#customerView .customer-policy-grid{grid-template-columns:1fr}#customerView .customer-info-band{margin-top:18px}}
+
+    /* Customer product pricing: high-visibility marketplace style */
+    #customerView #productsGrid .customer-price-main{display:block;color:#111827!important;font-size:21px!important;line-height:1.1;font-weight:900!important;letter-spacing:-.02em}
+    #customerView #productsGrid .customer-price-old{display:inline-block;color:#94a3b8!important;font-size:12px!important;font-weight:600;text-decoration:line-through;margin-left:5px}
+    #customerView #productsGrid .customer-price-wrap{display:flex;align-items:baseline;gap:4px;min-width:0}
+    #customerView #productsGrid .customer-price-currency{color:#111827!important;font-size:13px;font-weight:800}
+    #customerView #productsGrid .customer-buy{white-space:nowrap}
+    @media(max-width:560px){#customerView #productsGrid .customer-price-main{font-size:18px!important}#customerView #productsGrid .customer-price-old{font-size:10px!important}}
+
     /* Rich responsive customer account dashboard */
     #customerProfileModal .profile-quick{display:flex;align-items:center;gap:10px;width:100%;padding:13px;border:1px solid #e5e7eb;border-radius:14px;background:#fff;text-align:left;color:#4f46e5;box-shadow:0 3px 12px rgba(15,23,42,.04)}
     #customerProfileModal .profile-quick:hover{border-color:#c7d2fe;background:#f8faff}
@@ -1683,10 +1692,10 @@
                 <p class="text-xs text-slate-400 line-clamp-2 mt-1">${product.short_description}</p>
               </div>
 
-              <div class="mt-4 pt-3 border-t border-dark-border flex items-center justify-between">
-                <div>
-                  <span class="text-base font-extrabold text-white">₹${product.price.toLocaleString('en-IN')}</span>
-                  <span class="text-xs text-slate-500 line-through ml-1">₹${product.compare_at_price.toLocaleString('en-IN')}</span>
+              <div class="mt-4 pt-3 border-t border-slate-200 flex items-center justify-between gap-3">
+                <div class="customer-price-wrap">
+                  <span class="customer-price-currency">₹</span><span class="customer-price-main">${product.price.toLocaleString("en-IN")}</span>
+                  ${Number(product.compare_at_price||0)>Number(product.price||0)?'<span class="customer-price-old">₹'+Number(product.compare_at_price||0).toLocaleString("en-IN")+'</span>':''}
                 </div>
                 <button onclick="event.stopPropagation(); buyNowProduct('${product.id}')" class="customer-buy px-3 py-1.5 text-white text-xs font-semibold rounded-lg shadow transition flex items-center space-x-1">
                   <i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i>
@@ -3137,7 +3146,7 @@
         const {data,error}=await supabaseClient.from('customer_profiles').select('*').eq('id',customerSession.user.id).maybeSingle();
         if(!error)remote=data;
       }catch(e){}
-      customerProfileData={...local,...(remote||{})};
+      const remoteSafe=remote?Object.fromEntries(Object.entries(remote).filter(([_,v])=>v!==null&&v!==undefined&&v!=='')):{}; customerProfileData={...local,...remoteSafe};
       updateCustomerAddressChip();
       const u=customerSession.user;
       document.getElementById('profileFullName').value=customerProfileData.full_name||u.user_metadata?.full_name||'';
@@ -3179,6 +3188,7 @@
     function removeCustomerAvatar(){
       if(!customerProfileData)customerProfileData={};
       customerProfileData.avatar_data='';
+      const saved=getLocalCustomerProfile()||{}; localStorage.setItem(profileLocalKey(),JSON.stringify({...saved,...customerProfileData,avatar_data:''}));
       setProfileAvatar('');
       const input=document.getElementById('customerAvatarInput');if(input)input.value='';
     }
@@ -3201,6 +3211,7 @@
           const data=canvas.toDataURL('image/jpeg',0.72);
           if(!customerProfileData)customerProfileData={};
           customerProfileData.avatar_data=data;
+          const saved=getLocalCustomerProfile()||{}; localStorage.setItem(profileLocalKey(),JSON.stringify({...saved,...customerProfileData,avatar_data:data}));
           setProfileAvatar(data);
         };
         img.src=reader.result;
