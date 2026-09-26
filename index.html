@@ -1280,12 +1280,36 @@
       initAdminData();
 
       const portal = new URLSearchParams(window.location.search).get('portal');
+
+      // The public storefront must never expose the Admin Portal switch.
+      const adminSwitch = document.getElementById('viewToggleBtn');
+      if (adminSwitch) adminSwitch.style.display = portal === 'admin' || portal === 'automation' ? 'none' : 'none';
+
+      // Admin is a separate portal loaded only through /admin.html.
+      // The outer admin login gate sets this session flag after successful login.
       if (portal === 'admin' || portal === 'automation') {
-        setTimeout(() => toggleAdminView(), 250);
+        const adminGate = sessionStorage.getItem('ecommerce_admin_session') === '1';
+        if (!adminGate) {
+          document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0b0f19;color:#fff;font-family:Arial,sans-serif"><div style="text-align:center;padding:24px"><h2>Admin authentication required</h2><p style="color:#94a3b8">Open the Admin website and sign in first.</p></div></div>';
+          return;
+        }
+
+        isAdminMode = true;
+        setSidebarMode(true);
+        document.getElementById('customerView')?.classList.add('hidden');
+        document.getElementById('adminView')?.classList.remove('hidden');
+        document.getElementById('customerSearchContainer')?.classList.add('hidden');
+        document.getElementById('backendSettingsBtn')?.classList.remove('hidden');
+        document.getElementById('customerAuthBtn')?.classList.add('hidden');
+        document.getElementById('sidebarRoleLabel').textContent = 'Administrator Portal';
+        loadAdminDashboard();
+        loadVideoJobs();
+        loadAutopilotProducts();
+
         setTimeout(() => {
           if (portal === 'automation') switchAdminTab('autopilot');
           else switchAdminTab('overview');
-        }, 500);
+        }, 300);
       }
     });
 
