@@ -116,16 +116,27 @@ Deno.serve(async (req: Request) => {
 
     if (job.generation_status === "queued") {
       const product = job.products;
-      const prompt = job.generation_prompt || [
-        "Create a premium e-commerce product promotion video.",
-        "Use only verified product facts. Do not invent specifications, reviews, discounts, certifications, prices, or performance claims.",
-        "Show the product clearly with smooth commercial camera motion.",
-        "Vertical 9:16 social-commerce video. Native appropriate audio.",
-        "Persistent watermark: " + BRAND + ", bottom-right.",
-        "Product name: " + product.name,
-        "Description: " + (product.description ?? product.short_description ?? ""),
-        "Current price: " + String(product.price ?? "")
-      ].join("\n");
+      const language = String(job.language_code || "en");
+      const country = String(job.country_code || "");
+      const locale = String(job.locale || (language + (country ? "-" + country : "")));
+      const localizedTitle = job.localized_title || job.title || product.name;
+      const localizedDescription = job.localized_description || product.description || product.short_description || "";
+      const prompt = job.generation_prompt && job.generation_prompt !== "LOCALIZE_AND_GENERATE"
+        ? job.generation_prompt
+        : [
+          "Create a premium e-commerce product promotion video.",
+          "Localize the on-screen wording, narration and natural audio for language code: " + language + ".",
+          "Target market country code: " + country + ". Locale: " + locale + ".",
+          "Use natural local phrasing, not literal machine translation. Keep the product name/brand recognizable.",
+          "Use only verified product facts. Do not invent specifications, reviews, discounts, certifications, prices, or performance claims.",
+          "Show the product clearly with smooth commercial camera motion.",
+          "Vertical 9:16 social-commerce video. Native appropriate audio.",
+          "Persistent watermark: " + BRAND + ", bottom-right.",
+          "Localized title: " + localizedTitle,
+          "Localized description: " + localizedDescription,
+          "Product name: " + product.name,
+          "Current price: " + String(product.price ?? "")
+        ].join("\n");
       const operation = await startVeo(prompt, await imageFromProduct(product));
       await admin.from("video_jobs").update({
         generation_status: "processing",
