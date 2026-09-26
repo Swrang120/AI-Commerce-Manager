@@ -1129,6 +1129,70 @@
     </div>
   </div>
 
+  <!-- ================= CUSTOMER PROFILE ================= -->
+  <div id="customerProfileModal" class="fixed inset-0 z-[66] hidden items-center justify-center p-4">
+    <div class="fixed inset-0 bg-black/80 backdrop-blur-sm" onclick="closeCustomerProfile()"></div>
+    <div class="relative w-full max-w-lg max-h-[92vh] overflow-y-auto bg-dark-card border border-dark-border rounded-2xl p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-5">
+        <div>
+          <h3 class="text-xl font-bold text-white">My Profile</h3>
+          <p class="text-xs text-slate-400 mt-1">Your profile and delivery address stay saved until you change them.</p>
+        </div>
+        <button onclick="closeCustomerProfile()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="flex items-center gap-4 mb-6 p-4 rounded-2xl bg-slate-900/70 border border-slate-800">
+        <div class="relative shrink-0">
+          <div id="customerProfileAvatar" class="w-20 h-20 rounded-full bg-gradient-to-br from-brand-600 to-purple-500 grid place-items-center overflow-hidden border-2 border-slate-700">
+            <i data-lucide="user" class="w-8 h-8 text-white"></i>
+          </div>
+          <label class="absolute -right-1 -bottom-1 w-8 h-8 rounded-full bg-brand-600 grid place-items-center cursor-pointer border-2 border-dark-card">
+            <i data-lucide="camera" class="w-4 h-4 text-white"></i>
+            <input id="customerAvatarInput" type="file" accept="image/*" class="hidden" onchange="previewCustomerAvatar(event)">
+          </label>
+        </div>
+        <div class="min-w-0">
+          <div class="font-bold text-white">Profile photo</div>
+          <p class="text-[11px] text-slate-500 mt-1">Choose a photo from your phone. It will be resized before saving.</p>
+          <button type="button" onclick="removeCustomerAvatar()" class="text-xs text-rose-400 mt-2">Remove photo</button>
+        </div>
+      </div>
+
+      <form id="customerProfileForm" onsubmit="saveCustomerProfile(event)" class="space-y-4">
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs text-slate-400">Full name</label>
+            <input id="profileFullName" required class="w-full mt-1 bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white" placeholder="Full name">
+          </div>
+          <div>
+            <label class="text-xs text-slate-400">Phone</label>
+            <input id="profilePhone" type="tel" class="w-full mt-1 bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white" placeholder="Phone number">
+          </div>
+        </div>
+
+        <div class="pt-2">
+          <div class="flex items-center gap-2 text-sm font-bold text-white"><i data-lucide="map-pin" class="w-4 h-4 text-brand-400"></i>Saved delivery address</div>
+          <p class="text-[11px] text-slate-500 mt-1">This address will remain selected for future orders until you edit it.</p>
+        </div>
+
+        <input id="profileAddress1" required class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white" placeholder="House / Flat / Street / Village">
+        <input id="profileAddress2" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white" placeholder="Area / Locality (optional)">
+        <input id="profileLandmark" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white" placeholder="Landmark (optional)">
+
+        <div class="grid sm:grid-cols-3 gap-3">
+          <input id="profileCity" required class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white" placeholder="City / Town">
+          <input id="profileState" required class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white" placeholder="State">
+          <input id="profilePostal" required inputmode="numeric" maxlength="6" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white" placeholder="PIN code">
+        </div>
+
+        <input id="profileCountry" value="India" class="w-full bg-slate-900 border border-dark-border rounded-lg px-3 py-2.5 text-sm text-white" placeholder="Country">
+
+        <p id="customerProfileMessage" class="hidden text-xs"></p>
+        <button id="customerProfileSaveBtn" class="w-full py-3 rounded-xl bg-brand-600 hover:bg-brand-500 text-sm font-bold text-white">Save Profile & Address</button>
+      </form>
+    </div>
+  </div>
+
   <!-- ================= ADMIN LOGIN ================= -->
   <div id="adminLoginModal" class="fixed inset-0 z-[70] hidden items-center justify-center p-4">
     <div class="fixed inset-0 bg-black/80 backdrop-blur-sm" onclick="closeAdminLogin()"></div>
@@ -1175,6 +1239,14 @@
     if (supabaseClient) {
       supabaseClient.auth.onAuthStateChange((event, session) => {
         customerSession = session;
+        if (session && event !== 'PASSWORD_RECOVERY') {
+          setTimeout(()=>loadCustomerProfile(),0);
+        }
+        if (event === 'SIGNED_OUT') {
+          customerProfileData=null;
+          const btn=document.getElementById('customerAuthBtn');
+          if(btn)btn.textContent='Account';
+        }
         if (event === 'PASSWORD_RECOVERY') {
           openCustomerAuth();
           showCustomerReset();
@@ -1278,6 +1350,14 @@
       updateCartUI();
       updateWishlistUI();
       initAdminData();
+      if (supabaseClient) {
+        supabaseClient.auth.getSession().then(({data}) => {
+          if (data?.session) {
+            customerSession=data.session;
+            loadCustomerProfile();
+          }
+        });
+      }
 
       const portal = new URLSearchParams(window.location.search).get('portal');
 
@@ -2067,6 +2147,7 @@
         if(error) throw error;
         customerSession=data.session;
         const profile=await ensureCustomerProfile(data.user);
+        await loadCustomerProfile();
         if(profile?.role && ['admin','manager'].includes(profile.role)){
           // Keep customer login available, but admin controls remain protected behind Admin Portal.
         }
@@ -2144,6 +2225,7 @@
           if(passwordError) throw passwordError;
         }
         await ensureCustomerProfile(data.user,window.__customerSignupName || '');
+        await loadCustomerProfile();
         msg.className='text-xs text-emerald-400';
         msg.textContent='Email verified. Account created successfully.';
         window.__customerSignupPassword=null;
@@ -2763,13 +2845,157 @@
       const label=document.getElementById('sidebarRoleLabel');
       if(label) label.textContent=admin ? 'Administrator Portal' : 'Customer Store';
     }
+    let customerProfileData = null;
+
+    function profileLocalKey(){
+      return customerSession?.user?.id ? 'nexus_customer_profile_'+customerSession.user.id : 'nexus_customer_profile_guest';
+    }
+
+    function getLocalCustomerProfile(){
+      try{return JSON.parse(localStorage.getItem(profileLocalKey())||'null')}catch(e){return null}
+    }
+
+    function setProfileAvatar(data){
+      const box=document.getElementById('customerProfileAvatar');
+      if(!box)return;
+      if(data){
+        box.innerHTML='<img src="'+String(data).replace(/"/g,'&quot;')+'" class="w-full h-full object-cover" alt="Profile photo">';
+      }else{
+        box.innerHTML='<i data-lucide="user" class="w-8 h-8 text-white"></i>';
+        lucide.createIcons();
+      }
+      const btn=document.getElementById('customerAuthBtn');
+      if(btn && customerSession){
+        const name=(customerProfileData?.full_name||customerSession.user?.user_metadata?.full_name||'Account').trim();
+        btn.innerHTML=data
+          ? '<img src="'+String(data).replace(/"/g,'&quot;')+'" class="w-7 h-7 rounded-full object-cover inline-block mr-2 align-middle" alt="">'+(name.split(' ')[0]||'Account')
+          : (name.split(' ')[0]||'Account');
+      }
+    }
+
+    async function loadCustomerProfile(){
+      if(!customerSession?.user||!supabaseClient)return;
+      const local=getLocalCustomerProfile()||{};
+      let remote=null;
+      try{
+        const {data,error}=await supabaseClient.from('customer_profiles').select('*').eq('id',customerSession.user.id).maybeSingle();
+        if(!error)remote=data;
+      }catch(e){}
+      customerProfileData={...local,...(remote||{})};
+      const u=customerSession.user;
+      document.getElementById('profileFullName').value=customerProfileData.full_name||u.user_metadata?.full_name||'';
+      document.getElementById('profilePhone').value=customerProfileData.phone||u.phone||'';
+      document.getElementById('profileAddress1').value=customerProfileData.address_line1||'';
+      document.getElementById('profileAddress2').value=customerProfileData.address_line2||'';
+      document.getElementById('profileLandmark').value=customerProfileData.landmark||'';
+      document.getElementById('profileCity').value=customerProfileData.city||'';
+      document.getElementById('profileState').value=customerProfileData.state||'';
+      document.getElementById('profilePostal').value=customerProfileData.postal_code||'';
+      document.getElementById('profileCountry').value=customerProfileData.country||'India';
+      setProfileAvatar(customerProfileData.avatar_data||'');
+    }
+
+    function openCustomerProfile(){
+      if(!customerSession){
+        openCustomerAuth();
+        return;
+      }
+      const modal=document.getElementById('customerProfileModal');
+      modal.classList.remove('hidden');modal.classList.add('flex');
+      loadCustomerProfile();
+      lucide.createIcons();
+    }
+
+    function closeCustomerProfile(){
+      const modal=document.getElementById('customerProfileModal');
+      modal.classList.add('hidden');modal.classList.remove('flex');
+    }
+
+    function removeCustomerAvatar(){
+      if(!customerProfileData)customerProfileData={};
+      customerProfileData.avatar_data='';
+      setProfileAvatar('');
+      const input=document.getElementById('customerAvatarInput');if(input)input.value='';
+    }
+
+    function previewCustomerAvatar(event){
+      const file=event.target.files?.[0];
+      if(!file)return;
+      if(!file.type.startsWith('image/'))return alert('Please choose an image.');
+      if(file.size>8*1024*1024)return alert('Please choose an image smaller than 8 MB.');
+      const reader=new FileReader();
+      reader.onload=()=>{
+        const img=new Image();
+        img.onload=()=>{
+          const size=256,canvas=document.createElement('canvas');
+          canvas.width=size;canvas.height=size;
+          const ctx=canvas.getContext('2d');
+          const scale=Math.max(size/img.width,size/img.height);
+          const w=img.width*scale,h=img.height*scale;
+          ctx.drawImage(img,(size-w)/2,(size-h)/2,w,h);
+          const data=canvas.toDataURL('image/jpeg',0.72);
+          if(!customerProfileData)customerProfileData={};
+          customerProfileData.avatar_data=data;
+          setProfileAvatar(data);
+        };
+        img.src=reader.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function saveCustomerProfile(event){
+      event.preventDefault();
+      if(!customerSession?.user)return openCustomerAuth();
+      const btn=document.getElementById('customerProfileSaveBtn');
+      const msg=document.getElementById('customerProfileMessage');
+      btn.disabled=true;btn.textContent='Saving…';msg.classList.remove('hidden');
+      const payload={
+        id:customerSession.user.id,
+        full_name:document.getElementById('profileFullName').value.trim(),
+        phone:document.getElementById('profilePhone').value.trim(),
+        avatar_data:customerProfileData?.avatar_data||'',
+        address_line1:document.getElementById('profileAddress1').value.trim(),
+        address_line2:document.getElementById('profileAddress2').value.trim(),
+        landmark:document.getElementById('profileLandmark').value.trim(),
+        city:document.getElementById('profileCity').value.trim(),
+        state:document.getElementById('profileState').value.trim(),
+        postal_code:document.getElementById('profilePostal').value.trim(),
+        country:document.getElementById('profileCountry').value.trim()||'India'
+      };
+      try{
+        if(!payload.address_line1||!payload.city||!payload.state||!payload.postal_code)throw new Error('Please complete the required delivery address.');
+        localStorage.setItem(profileLocalKey(),JSON.stringify(payload));
+        let remoteError=null;
+        try{
+          const {error}=await supabaseClient.from('customer_profiles').upsert(payload,{onConflict:'id'});
+          remoteError=error;
+        }catch(e){remoteError=e}
+        if(remoteError){
+          msg.className='text-xs text-amber-400';
+          msg.textContent='Saved on this device. Database profile sync is waiting for the customer profile migration.';
+        }else{
+          msg.className='text-xs text-emerald-400';
+          msg.textContent='Profile and delivery address saved successfully.';
+        }
+        customerProfileData=payload;
+        setProfileAvatar(payload.avatar_data);
+        document.getElementById('customerAuthBtn').title='My Profile';
+      }catch(e){
+        msg.className='text-xs text-rose-400';
+        msg.textContent=e.message||'Could not save profile.';
+      }finally{
+        btn.disabled=false;btn.textContent='Save Profile & Address';
+      }
+    }
+
     function customerNav(key){
       closeAppSidebar();
       const map={home:'body',products:'productsCatalog',categories:'categoryPills',search:'searchInput',videos:'customerVideosSection'};
       if(key==='orders'){ openTrackOrderModal(); return; }
       if(key==='downloads'){ customerDownloadsView(); return; }
-      if(key==='notifications'||key==='profile'||key==='settings'||key==='help'){
-        alert('This section is connected to your authenticated account. Use Account to sign in and manage it.');
+      if(key==='profile'||key==='settings'){ openCustomerProfile(); return; }
+      if(key==='notifications'||key==='help'){
+        alert('This section is connected to your authenticated account. Open Profile to manage your account details.');
         return;
       }
       const el=document.getElementById(map[key]);
