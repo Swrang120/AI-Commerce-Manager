@@ -1541,7 +1541,30 @@
     document.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
       renderCategoryPills();
+      renderProducts(storeProducts);
       fetchSupabaseProducts();
+
+      const productGrid = document.getElementById('productsGrid');
+      if (productGrid && !productGrid.dataset.clickBound) {
+        productGrid.dataset.clickBound = '1';
+        productGrid.addEventListener('click', (event) => {
+          const interactive = event.target.closest('button, a, input, select, textarea, label');
+          if (interactive) return;
+          const card = event.target.closest('[data-product-id]');
+          if (!card) return;
+          const productId = card.getAttribute('data-product-id');
+          if (productId) openProductDetailModal(productId);
+        });
+      }
+
+      productGrid?.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        const card = event.target.closest('[data-product-id]');
+        if (!card || event.target !== card) return;
+        event.preventDefault();
+        openProductDetailModal(card.getAttribute('data-product-id'));
+      });
+
       updateCartUI();
       updateWishlistUI();
       initAdminData();
@@ -1674,8 +1697,8 @@
         const isWishlisted = wishlist.includes(product.id);
         const discountPct = Math.round(((product.compare_at_price - product.price) / product.compare_at_price) * 100);
         return `
-          <div onclick="openProductDetailModal('${product.id}')" class="group bg-dark-card border border-dark-border rounded-2xl overflow-hidden hover:border-brand-500/50 hover:shadow-xl hover:shadow-brand-500/5 transition flex flex-col justify-between cursor-pointer">
-            <div class="relative overflow-hidden cursor-pointer" onclick="openProductDetailModal('${product.id}')">
+          <div data-product-id="${String(product.id).replace(/"/g, "&quot;")}" role="button" tabindex="0" class="group bg-dark-card border border-dark-border rounded-2xl overflow-hidden hover:border-brand-500/50 hover:shadow-xl hover:shadow-brand-500/5 transition flex flex-col justify-between cursor-pointer">
+            <div class="relative overflow-hidden cursor-pointer">
               <img src="${product.image_url}" alt="${product.name}" class="w-full h-48 object-cover group-hover:scale-105 transition duration-300">
               <button onclick="event.stopPropagation(); toggleWishlist('${product.id}')" class="absolute top-3 right-3 p-2 rounded-full glass border border-white/10 ${isWishlisted ? 'text-pink-500' : 'text-slate-300'} hover:text-pink-400 transition">
                 <i data-lucide="heart" class="w-4 h-4 fill-current ${isWishlisted ? '' : 'fill-none'}"></i>
@@ -1690,7 +1713,7 @@
             <div class="p-4 flex-1 flex flex-col justify-between">
               <div>
                 <div class="flex items-center justify-between text-xs text-slate-400 mb-2"><span class="px-2 py-1 rounded-full bg-indigo-50 text-indigo-700 font-bold">${product.category}</span><span class="text-slate-400 font-medium">Verified Product</span></div>
-                <h3 class="text-sm font-bold text-white group-hover:text-brand-400 transition line-clamp-1 cursor-pointer" onclick="openProductDetailModal('${product.id}')">
+                <h3 class="text-sm font-bold text-white group-hover:text-brand-400 transition line-clamp-1 cursor-pointer">
                   ${product.name}
                 </h3>
                 <p class="text-xs text-slate-400 line-clamp-2 mt-1">${product.short_description}</p>
