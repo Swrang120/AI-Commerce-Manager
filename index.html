@@ -1603,6 +1603,7 @@
         }
 
         isAdminMode = true;
+        adminSession = { source: 'admin-gate', authenticated: true };
         setSidebarMode(true);
         document.getElementById('customerView')?.classList.add('hidden');
         document.getElementById('adminView')?.classList.remove('hidden');
