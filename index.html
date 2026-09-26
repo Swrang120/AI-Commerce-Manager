@@ -1153,7 +1153,7 @@
         </div>
         <div class="min-w-0">
           <div class="font-bold text-white">Profile photo</div>
-          <p class="text-[11px] text-slate-500 mt-1">Choose a photo from your phone. It will be resized before saving.</p>
+          <p class="text-[11px] text-slate-500 mt-1">Choose a photo from your phone. It will be resized before saving and kept on this device until you replace or remove it.</p>
           <button type="button" onclick="removeCustomerAvatar()" class="text-xs text-rose-400 mt-2">Remove photo</button>
         </div>
       </div>
@@ -3011,8 +3011,14 @@
       if(key==='orders'){ openTrackOrderModal(); return; }
       if(key==='downloads'){ customerDownloadsView(); return; }
       if(key==='profile'||key==='settings'){ openCustomerProfile(); return; }
-      if(key==='notifications'||key==='help'){
-        alert('This section is connected to your authenticated account. Open Profile to manage your account details.');
+      if(key==='notifications'){
+        alert('Your account notifications will appear here.');
+        return;
+      }
+      if(key==='help'){
+        closeAppSidebar();
+        const support=String.fromCharCode(101,99,111,109,109,101,114,99,101,115,104,111,112,112,105,110,103,48,52,64,103,109,97,105,108,46,99,111,109);
+        window.location.href='mailto:'+support+'?subject=Customer%20Support';
         return;
       }
       const el=document.getElementById(map[key]);
