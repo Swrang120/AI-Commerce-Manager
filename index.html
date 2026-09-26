@@ -58,6 +58,28 @@
       background: #374151;
       border-radius: 4px;
     }
+  
+    /* Premium navigation + AI video workspace */
+    .app-sidebar-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.68);backdrop-filter:blur(3px);z-index:70;display:none}
+    .app-sidebar-backdrop.open{display:block}
+    .app-sidebar{position:fixed;top:0;bottom:0;left:0;width:min(330px,88vw);background:#0d1422;border-right:1px solid #263244;z-index:80;transform:translateX(-105%);transition:transform .22s ease;overflow-y:auto;box-shadow:24px 0 60px rgba(0,0,0,.35)}
+    .app-sidebar.open{transform:translateX(0)}
+    .sidebar-item{display:flex;align-items:center;gap:12px;width:100%;padding:11px 14px;border-radius:12px;color:#aab6c8;font-size:13px;font-weight:600;text-align:left;transition:.15s}
+    .sidebar-item:hover{background:#172236;color:#fff}
+    .sidebar-section{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#64748b;font-weight:800;padding:16px 14px 7px}
+    .video-card{background:#111827;border:1px solid #263244;border-radius:18px;overflow:hidden}
+    .video-card-media{aspect-ratio:9/16;background:#020617;position:relative;overflow:hidden}
+    .video-card-media video,.video-card-media img{width:100%;height:100%;object-fit:cover}
+    .video-status{position:absolute;top:10px;left:10px;padding:4px 8px;border-radius:999px;background:rgba(2,6,23,.78);font-size:10px;font-weight:800}
+    .video-admin-grid{display:grid;grid-template-columns:repeat(1,minmax(0,1fr));gap:14px}
+    @media(min-width:768px){.video-admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(min-width:1100px){.video-admin-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    .video-setting-grid{display:grid;grid-template-columns:repeat(1,minmax(0,1fr));gap:12px}
+    @media(min-width:768px){.video-setting-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    .video-field{width:100%;background:#0b1220;border:1px solid #273449;border-radius:11px;padding:10px 12px;color:#fff;font-size:13px;outline:none}
+    .video-field:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.12)}
+    .video-kpi{padding:14px;border:1px solid #263244;background:#0f172a;border-radius:14px}
+
   </style>
 </head>
 <body class="bg-dark-bg text-slate-100 min-h-screen flex flex-col selection:bg-brand-600 selection:text-white">
@@ -90,6 +112,10 @@
   <header class="sticky top-0 z-40 glass border-b border-dark-border">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
+
+          <button onclick="toggleAppSidebar()" aria-label="Open navigation" class="p-2.5 rounded-xl bg-slate-800/80 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 transition">
+            <i data-lucide="menu" class="w-5 h-5"></i>
+          </button>
         <!-- Logo -->
         <div class="flex items-center space-x-3 cursor-pointer" onclick="switchCustomerTab('home')">
           <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-purple-500 flex items-center justify-center shadow-lg shadow-brand-500/30">
@@ -145,6 +171,67 @@
       </div>
     </div>
   </header>
+
+
+  <!-- ================= PERMANENT APP SIDEBAR ================= -->
+  <div id="appSidebarBackdrop" class="app-sidebar-backdrop" onclick="closeAppSidebar()"></div>
+  <aside id="appSidebar" class="app-sidebar custom-scroll" aria-label="Application navigation">
+    <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+      <div>
+        <div class="text-white font-extrabold text-lg">E-commerce Shoping</div>
+        <div id="sidebarRoleLabel" class="text-[10px] uppercase tracking-widest text-slate-500 mt-1">Customer Store</div>
+      </div>
+      <button onclick="closeAppSidebar()" class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+
+    <div id="customerSidebarMenu" class="p-3">
+      <div class="sidebar-section">Customer</div>
+      <button class="sidebar-item" onclick="customerNav('home')"><i data-lucide="home" class="w-4 h-4"></i>Home</button>
+      <button class="sidebar-item" onclick="customerNav('products')"><i data-lucide="package" class="w-4 h-4"></i>Products</button>
+      <button class="sidebar-item" onclick="customerNav('categories')"><i data-lucide="layers" class="w-4 h-4"></i>Categories</button>
+      <button class="sidebar-item" onclick="customerNav('search')"><i data-lucide="search" class="w-4 h-4"></i>Search</button>
+      <button class="sidebar-item" onclick="closeAppSidebar();openWishlistDrawer()"><i data-lucide="heart" class="w-4 h-4"></i>Wishlist</button>
+      <button class="sidebar-item" onclick="closeAppSidebar();openCartDrawer()"><i data-lucide="shopping-cart" class="w-4 h-4"></i>Cart</button>
+      <button class="sidebar-item" onclick="customerNav('orders')"><i data-lucide="receipt" class="w-4 h-4"></i>My Orders</button>
+      <button class="sidebar-item" onclick="customerNav('videos')"><i data-lucide="video" class="w-4 h-4 text-violet-400"></i>AI Product Videos</button>
+      <button class="sidebar-item" onclick="customerNav('downloads')"><i data-lucide="download" class="w-4 h-4"></i>My Downloads</button>
+      <button class="sidebar-item" onclick="customerNav('notifications')"><i data-lucide="bell" class="w-4 h-4"></i>Notifications</button>
+      <button class="sidebar-item" onclick="customerNav('profile')"><i data-lucide="user" class="w-4 h-4"></i>Profile</button>
+      <button class="sidebar-item" onclick="customerNav('settings')"><i data-lucide="settings" class="w-4 h-4"></i>Settings</button>
+      <button class="sidebar-item" onclick="customerNav('help')"><i data-lucide="circle-help" class="w-4 h-4"></i>Help & Support</button>
+      <button class="sidebar-item text-rose-300" onclick="customerLogout()"><i data-lucide="log-out" class="w-4 h-4"></i>Logout</button>
+    </div>
+
+    <div id="adminSidebarMenu" class="p-3 hidden">
+      <div class="sidebar-section">Admin</div>
+      <button class="sidebar-item" onclick="adminNav('overview')"><i data-lucide="layout-dashboard" class="w-4 h-4"></i>Dashboard</button>
+      <button class="sidebar-item" onclick="adminNav('products')"><i data-lucide="package" class="w-4 h-4"></i>Products</button>
+      <button class="sidebar-item" onclick="adminNav('research')"><i data-lucide="search-check" class="w-4 h-4"></i>Product Research</button>
+      <button class="sidebar-item" onclick="adminNav('hunter')"><i data-lucide="radar" class="w-4 h-4"></i>AI Product Hunter</button>
+      <button class="sidebar-item" onclick="adminNav('categories')"><i data-lucide="layers" class="w-4 h-4"></i>Categories</button>
+      <button class="sidebar-item" onclick="adminNav('suppliers')"><i data-lucide="truck" class="w-4 h-4"></i>Suppliers</button>
+      <button class="sidebar-item" onclick="adminNav('orders')"><i data-lucide="shopping-bag" class="w-4 h-4"></i>Orders</button>
+      <button class="sidebar-item" onclick="adminNav('customers')"><i data-lucide="users" class="w-4 h-4"></i>Customers</button>
+      <button class="sidebar-item" onclick="adminNav('payments')"><i data-lucide="credit-card" class="w-4 h-4"></i>Payments</button>
+      <button class="sidebar-item" onclick="adminNav('shipments')"><i data-lucide="package-check" class="w-4 h-4"></i>Shipments</button>
+      <div class="sidebar-section">AI Video System</div>
+      <button class="sidebar-item" onclick="adminNav('videos')"><i data-lucide="wand-sparkles" class="w-4 h-4 text-violet-400"></i>AI Video Generator</button>
+      <button class="sidebar-item" onclick="adminNav('video-library')"><i data-lucide="library" class="w-4 h-4"></i>Video Library</button>
+      <button class="sidebar-item" onclick="adminNav('scheduled')"><i data-lucide="calendar-clock" class="w-4 h-4"></i>Scheduled Videos</button>
+      <button class="sidebar-item" onclick="adminNav('published')"><i data-lucide="badge-check" class="w-4 h-4"></i>Published Videos</button>
+      <button class="sidebar-item" onclick="adminNav('video-automation')"><i data-lucide="bot" class="w-4 h-4"></i>Video Automation</button>
+      <div class="sidebar-section">Commerce</div>
+      <button class="sidebar-item" onclick="adminNav('marketing')"><i data-lucide="megaphone" class="w-4 h-4"></i>Marketing</button>
+      <button class="sidebar-item" onclick="adminNav('autopilot')"><i data-lucide="workflow" class="w-4 h-4"></i>Automation</button>
+      <button class="sidebar-item" onclick="adminNav('analytics')"><i data-lucide="chart-no-axes-combined" class="w-4 h-4"></i>Analytics</button>
+      <button class="sidebar-item" onclick="adminNav('earnings')"><i data-lucide="indian-rupee" class="w-4 h-4"></i>Earnings</button>
+      <button class="sidebar-item" onclick="adminNav('notifications')"><i data-lucide="bell" class="w-4 h-4"></i>Notifications</button>
+      <button class="sidebar-item" onclick="adminNav('profile')"><i data-lucide="user" class="w-4 h-4"></i>Profile</button>
+      <button class="sidebar-item" onclick="adminNav('settings')"><i data-lucide="settings" class="w-4 h-4"></i>Settings</button>
+      <button class="sidebar-item" onclick="adminNav('activity')"><i data-lucide="history" class="w-4 h-4"></i>Activity Logs</button>
+      <button class="sidebar-item text-rose-300" onclick="adminLogout()"><i data-lucide="log-out" class="w-4 h-4"></i>Logout</button>
+    </div>
+  </aside>
 
   <!-- ================= CUSTOMER STOREFRONT VIEW ================= -->
   <main id="customerView" class="flex-1 pb-16">
@@ -225,6 +312,24 @@
         <button onclick="resetFilters()" class="mt-4 px-4 py-2 bg-brand-600 text-xs font-medium rounded-lg text-white">Reset Filters</button>
       </div>
     </div>
+
+    <!-- ================= CUSTOMER AI PRODUCT VIDEOS ================= -->
+    <section id="customerVideosSection" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 border-t border-dark-border">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-5">
+        <div>
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 text-[11px] font-bold">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> AI PRODUCT VIDEOS
+          </div>
+          <h2 class="text-2xl font-extrabold text-white mt-3">AI Product Videos</h2>
+          <p class="text-sm text-slate-400 mt-1">Real published product videos from the store. No fake video records.</p>
+        </div>
+        <button onclick="loadPublicVideos()" class="px-4 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs font-bold text-slate-200 hover:bg-slate-700">Refresh Videos</button>
+      </div>
+      <div id="customerVideoGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div class="col-span-full p-8 text-center text-sm text-slate-500">Loading published videos…</div>
+      </div>
+    </section>
+
   </main>
 
   <!-- ================= ADMIN MANAGEMENT VIEW ================= -->
@@ -455,8 +560,117 @@
         </div>
       </div>
 
+
+      <!-- ================= AI VIDEO GENERATOR ================= -->
+      <div id="adminPanel-videos" class="admin-panel hidden space-y-5">
+        <div class="p-5 rounded-2xl bg-gradient-to-br from-violet-950/60 to-dark-card border border-violet-500/20">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <div class="text-[11px] uppercase tracking-widest text-violet-300 font-extrabold">AI VIDEO STUDIO</div>
+              <h2 class="text-xl font-extrabold text-white mt-1">AI Video Generator</h2>
+              <p class="text-xs text-slate-400 mt-1">Queue a real product job. Provider secrets remain server-side in the Edge Function.</p>
+            </div>
+            <button onclick="openManualVideoUpload()" class="px-4 py-2.5 bg-white text-slate-900 rounded-xl text-xs font-extrabold flex items-center gap-2"><i data-lucide="upload" class="w-4 h-4"></i> Manual Video Upload</button>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div class="lg:col-span-2 p-5 rounded-2xl bg-dark-card border border-dark-border">
+            <h3 class="text-sm font-extrabold text-white">Generate from a real product</h3>
+            <div class="video-setting-grid mt-4">
+              <div><label class="text-[11px] text-slate-400">Product</label><select id="videoProductSelect" class="video-field mt-1"></select></div>
+              <div><label class="text-[11px] text-slate-400">Aspect ratio</label><select id="videoAspect" class="video-field mt-1"><option>9:16</option><option>16:9</option><option>1:1</option></select></div>
+              <div><label class="text-[11px] text-slate-400">Resolution</label><select id="videoResolution" class="video-field mt-1"><option>1080p</option><option>720p</option></select></div>
+              <div><label class="text-[11px] text-slate-400">Duration</label><select id="videoDuration" class="video-field mt-1"><option value="15">15 sec</option><option value="30" selected>30 sec</option><option value="45">45 sec</option><option value="60">60 sec</option></select></div>
+            </div>
+            <button onclick="queueSelectedVideo()" class="mt-4 w-full px-4 py-3 bg-brand-600 hover:bg-brand-500 rounded-xl text-sm font-extrabold text-white">Create AI Video Job</button>
+            <p id="videoGeneratorMessage" class="text-xs text-slate-500 mt-3"></p>
+          </div>
+          <div class="p-5 rounded-2xl bg-dark-card border border-dark-border">
+            <h3 class="text-sm font-extrabold text-white">Latest job status</h3>
+            <div id="videoJobsList" class="space-y-2 mt-4 max-h-[330px] overflow-y-auto custom-scroll">
+              <div class="text-xs text-slate-500">Loading…</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= VIDEO LIBRARY ================= -->
+      <div id="adminPanel-video-library" class="admin-panel hidden space-y-5">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div><h2 class="text-xl font-extrabold text-white">Video Library</h2><p class="text-xs text-slate-400 mt-1">Generated, uploaded, scheduled, published and failed video jobs.</p></div>
+          <div class="flex flex-wrap gap-2">
+            <select id="videoLibraryStatus" onchange="loadAdminVideoLibrary()" class="video-field !w-auto"><option value="">All status</option><option>queued</option><option>processing</option><option>completed</option><option>failed</option><option>published</option><option>cancelled</option><option>scheduled</option></select>
+            <select id="videoLibrarySource" onchange="loadAdminVideoLibrary()" class="video-field !w-auto"><option value="">All sources</option><option value="manual">Manual Upload</option><option value="ai">AI Generated</option></select>
+            <button onclick="loadAdminVideoLibrary()" class="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs font-bold">Refresh</button>
+          </div>
+        </div>
+        <div id="adminVideoLibraryGrid" class="video-admin-grid"><div class="p-8 text-center text-sm text-slate-500">Loading…</div></div>
+      </div>
+
+      <!-- ================= SCHEDULED / PUBLISHED ================= -->
+      <div id="adminPanel-scheduled" class="admin-panel hidden space-y-4">
+        <div><h2 class="text-xl font-extrabold text-white">Scheduled Videos</h2><p class="text-xs text-slate-400">Only jobs with a real scheduled timestamp are shown.</p></div>
+        <div id="scheduledVideoGrid" class="video-admin-grid"></div>
+      </div>
+      <div id="adminPanel-published" class="admin-panel hidden space-y-4">
+        <div><h2 class="text-xl font-extrabold text-white">Published Videos</h2><p class="text-xs text-slate-400">Videos currently visible in the customer library.</p></div>
+        <div id="publishedVideoGrid" class="video-admin-grid"></div>
+      </div>
+
+      <!-- ================= VIDEO AUTOMATION SETTINGS ================= -->
+      <div id="adminPanel-video-automation" class="admin-panel hidden space-y-5">
+        <div class="p-5 rounded-2xl bg-dark-card border border-dark-border">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div><h2 class="text-xl font-extrabold text-white">Video Automation</h2><p class="text-xs text-slate-400 mt-1">Server-side settings stored in Supabase <code>video_settings</code>. Android/browser does not need to stay open.</p></div>
+            <label class="flex items-center gap-3 text-sm font-bold text-white"><input id="videoAutoEnabled" type="checkbox" class="w-5 h-5 accent-indigo-600"> Enable Auto Video Generation</label>
+          </div>
+          <div class="video-setting-grid mt-5">
+            <div><label class="text-[11px] text-slate-400">Videos per day</label><input id="videoAutoPerDay" type="number" min="1" max="100" value="3" class="video-field mt-1"></div>
+            <div><label class="text-[11px] text-slate-400">Generation time (IST)</label><input id="videoAutoTime" type="time" value="09:00" class="video-field mt-1"></div>
+            <div><label class="text-[11px] text-slate-400">Timezone</label><input id="videoAutoTimezone" value="Asia/Kolkata" class="video-field mt-1"></div>
+            <div><label class="text-[11px] text-slate-400">Product selection</label><select id="videoAutoSelection" class="video-field mt-1"><option value="latest">Latest Products</option><option value="bestseller">Best Selling Products</option><option value="needs_promotion">Products Needing Promotion</option><option value="random">Random Approved Products</option><option value="selected">Selected Products</option></select></div>
+            <div><label class="text-[11px] text-slate-400">Aspect ratio</label><select id="videoAutoAspect" class="video-field mt-1"><option>9:16</option><option>16:9</option><option>1:1</option></select></div>
+            <div><label class="text-[11px] text-slate-400">Resolution</label><input id="videoAutoResolution" value="1080p" class="video-field mt-1"></div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-5 text-xs text-slate-300">
+            <label class="flex gap-2 items-center"><input id="videoAutoApproval" type="checkbox" checked> Require admin approval before publishing</label>
+            <label class="flex gap-2 items-center"><input id="videoAutoRetry" type="checkbox" checked> Retry failed jobs</label>
+            <label class="flex gap-2 items-center"><input id="videoAutoActiveOnly" type="checkbox" checked> Only active products</label>
+            <label class="flex gap-2 items-center"><input id="videoAutoImagesOnly" type="checkbox" checked> Only products with valid images</label>
+            <label class="flex gap-2 items-center"><input id="videoAutoNoDuplicates" type="checkbox" checked> Avoid duplicate products</label>
+            <label class="flex gap-2 items-center"><input id="videoAutoPublish" type="checkbox"> Auto-publish successful videos</label>
+          </div>
+          <button onclick="saveVideoAutomationSettings()" class="mt-5 px-5 py-2.5 bg-brand-600 hover:bg-brand-500 rounded-xl text-sm font-extrabold text-white">Save Server Settings</button>
+          <p id="videoAutomationMessage" class="text-xs mt-3 text-slate-500"></p>
+        </div>
+      </div>
+
     </div>
   </main>
+
+
+  <!-- ================= MANUAL VIDEO UPLOAD MODAL ================= -->
+  <div id="manualVideoModal" class="fixed inset-0 z-[90] hidden items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/75 backdrop-blur-sm" onclick="closeManualVideoUpload()"></div>
+    <div class="relative w-full max-w-2xl bg-dark-card border border-dark-border rounded-2xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-5">
+        <div><h3 class="text-lg font-extrabold text-white">Manual Video Upload</h3><p class="text-xs text-slate-400 mt-1">Uploads the real video file to Supabase Storage.</p></div>
+        <button onclick="closeManualVideoUpload()" class="p-2 text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form onsubmit="submitManualVideoUpload(event)" class="space-y-4">
+        <div><label class="text-[11px] text-slate-400">Product</label><select id="manualVideoProduct" class="video-field mt-1" required></select></div>
+        <div><label class="text-[11px] text-slate-400">Video file</label><input id="manualVideoFile" type="file" accept="video/*" class="video-field mt-1" required></div>
+        <div class="video-setting-grid">
+          <div><label class="text-[11px] text-slate-400">Title</label><input id="manualVideoTitle" class="video-field mt-1" placeholder="Product video title"></div>
+          <div><label class="text-[11px] text-slate-400">Aspect ratio</label><select id="manualVideoAspect" class="video-field mt-1"><option>9:16</option><option>16:9</option><option>1:1</option></select></div>
+        </div>
+        <div><label class="text-[11px] text-slate-400">Description</label><textarea id="manualVideoDescription" rows="3" class="video-field mt-1" placeholder="Verified product-focused description"></textarea></div>
+        <div><label class="text-[11px] text-slate-400">Schedule (optional)</label><input id="manualVideoSchedule" type="datetime-local" class="video-field mt-1"></div>
+        <label class="flex gap-2 items-center text-xs text-slate-300"><input id="manualVideoPublic" type="checkbox" checked> Publish to customer video library immediately</label>
+        <button id="manualVideoSubmit" type="submit" class="w-full px-4 py-3 bg-brand-600 hover:bg-brand-500 rounded-xl text-sm font-extrabold text-white">Upload Video</button>
+      </form>
+    </div>
+  </div>
 
   <!-- ================= MODALS & DRAWERS ================= -->
 
@@ -934,6 +1148,7 @@
     // Configuration
     const DEFAULT_CONFIG = {
       supabaseUrl: 'https://eklycpnfnyjydrgxdnzm.supabase.co',
+      // Existing production commerce Supabase project intentionally preserved.
       supabaseKey: 'sb_publishable_NUt0MMWF-50fcrWCL5Nq-g_OX3FGqVf',
       razorpayPageUrl: 'https://razorpay.me/@santiramswargiary'
     };
@@ -2504,6 +2719,273 @@
       loadAdminDashboard();
       alert("Backend sync complete.");
     }
+
+    // ================= SIDEBAR + WEBSITE VIDEO SYSTEM =================
+    function toggleAppSidebar(){
+      document.getElementById('appSidebar')?.classList.toggle('open');
+      document.getElementById('appSidebarBackdrop')?.classList.toggle('open');
+      lucide.createIcons();
+    }
+    function closeAppSidebar(){
+      document.getElementById('appSidebar')?.classList.remove('open');
+      document.getElementById('appSidebarBackdrop')?.classList.remove('open');
+    }
+    function setSidebarMode(admin){
+      document.getElementById('customerSidebarMenu')?.classList.toggle('hidden', !!admin);
+      document.getElementById('adminSidebarMenu')?.classList.toggle('hidden', !admin);
+      const label=document.getElementById('sidebarRoleLabel');
+      if(label) label.textContent=admin ? 'Administrator Portal' : 'Customer Store';
+    }
+    function customerNav(key){
+      closeAppSidebar();
+      const map={home:'body',products:'productsCatalog',categories:'categoryPills',search:'searchInput',videos:'customerVideosSection'};
+      if(key==='orders'){ openTrackOrderModal(); return; }
+      if(key==='downloads'){ customerDownloadsView(); return; }
+      if(key==='notifications'||key==='profile'||key==='settings'||key==='help'){
+        alert('This section is connected to your authenticated account. Use Account to sign in and manage it.');
+        return;
+      }
+      const el=document.getElementById(map[key]);
+      if(el){ el.scrollIntoView({behavior:'smooth',block:'start'}); if(key==='search') setTimeout(()=>el.focus(),400); }
+      if(key==='videos') loadPublicVideos();
+    }
+    function adminNav(key){
+      closeAppSidebar();
+      const aliases={dashboard:'overview',products:'inventory',research:'hunter',categories:'inventory',customers:'orders',payments:'orders',shipments:'fulfillment',marketing:'automations',analytics:'overview',earnings:'overview',notifications:'overview',profile:'overview',settings:'autopilot',activity:'automations'};
+      switchAdminTab(aliases[key]||key);
+      if(key==='videos') loadAdminVideoLibrary();
+      if(key==='video-library') loadAdminVideoLibrary();
+      if(key==='scheduled') loadScheduledVideos();
+      if(key==='published') loadPublishedVideos();
+      if(key==='video-automation') loadVideoAutomationSettings();
+    }
+    async function customerLogout(){
+      closeAppSidebar();
+      if(supabaseClient) await supabaseClient.auth.signOut();
+      customerSession=null;
+      document.getElementById('customerAuthBtn').textContent='Account';
+      alert('You have been logged out.');
+    }
+    async function adminLogout(){
+      closeAppSidebar();
+      if(supabaseClient) await supabaseClient.auth.signOut();
+      adminSession=null; adminProfile=null; isAdminMode=false;
+      toggleAdminView();
+    }
+    function customerDownloadsView(){
+      closeAppSidebar();
+      const videos=document.getElementById('customerVideosSection');
+      if(videos) videos.scrollIntoView({behavior:'smooth'});
+      alert('Downloads are created from the real video file using the Download button on each published video.');
+    }
+
+    function videoProductName(job){
+      if(job.product_name) return job.product_name;
+      return job.title || ('Product Video ' + String(job.id||'').slice(0,8));
+    }
+    function videoCardHtml(job, admin){
+      const thumb=job.thumbnail_url || '';
+      const src=job.video_url || job.preview_url || '';
+      const status=job.generation_status || 'unknown';
+      const title=videoProductName(job).replace(/</g,'&lt;');
+      const desc=(job.description||'').slice(0,110).replace(/</g,'&lt;');
+      const media=src ? '<video controls preload="metadata" playsinline src="'+src+'" poster="'+thumb+'"></video>' : (thumb ? '<img src="'+thumb+'" alt="'+title+'">' : '<div class="w-full h-full flex items-center justify-center text-slate-600"><i data-lucide="video-off" class="w-10 h-10"></i></div>');
+      const actions=admin
+        ? '<div class="flex flex-wrap gap-2 mt-3">'+
+          (src?'<a href="'+src+'" target="_blank" class="px-3 py-1.5 rounded-lg bg-slate-800 text-[11px] font-bold">Preview</a>':'')+
+          '<button onclick="togglePublishedVideo(\''+job.id+'\','+(job.is_public?'false':'true')+')" class="px-3 py-1.5 rounded-lg bg-brand-600 text-[11px] font-bold">'+(job.is_public?'Unpublish':'Publish')+'</button>'+
+          (status==='failed'?'<button onclick="retryVideoJob(\''+job.id+'\')" class="px-3 py-1.5 rounded-lg bg-amber-600 text-[11px] font-bold">Retry</button>':'')+
+          '<button onclick="deleteVideoJob(\''+job.id+'\')" class="px-3 py-1.5 rounded-lg bg-rose-700 text-[11px] font-bold">Delete</button>'+
+          '</div>'
+        : '<div class="flex flex-wrap gap-2 mt-3">'+
+          (src?'<button onclick="downloadRealVideo(\''+job.id+'\',\''+src.replace(/'/g,"%27")+'\')" class="px-3 py-1.5 rounded-lg bg-brand-600 text-[11px] font-bold">Download</button>':'')+
+          (src?'<button onclick="shareRealVideo(\''+job.id+'\',\''+src.replace(/'/g,"%27")+'\')" class="px-3 py-1.5 rounded-lg bg-slate-800 text-[11px] font-bold">Share</button>':'')+
+          '<button onclick="viewProductFromVideo(\''+job.product_id+'\')" class="px-3 py-1.5 rounded-lg bg-slate-800 text-[11px] font-bold">View Product</button>'+
+          '</div>';
+      return '<article class="video-card">'+
+        '<div class="video-card-media">'+media+'<span class="video-status text-slate-200">'+status.toUpperCase()+'</span></div>'+
+        '<div class="p-4"><h3 class="text-sm font-extrabold text-white line-clamp-2">'+title+'</h3><p class="text-[11px] text-slate-400 mt-1">'+desc+'</p>'+
+        '<div class="flex gap-3 text-[10px] text-slate-500 mt-3"><span>'+String(job.aspect_ratio||'9:16')+'</span><span>'+(job.view_count||0)+' views</span><span>'+(job.download_count||0)+' downloads</span></div>'+actions+'</div></article>';
+    }
+
+    async function loadPublicVideos(){
+      const grid=document.getElementById('customerVideoGrid'); if(!grid||!supabaseClient)return;
+      grid.innerHTML='<div class="col-span-full p-8 text-center text-sm text-slate-500">Loading real published videos…</div>';
+      const {data,error}=await supabaseClient.from('video_jobs').select('*').eq('is_public',true).eq('generation_status','published').not('video_url','is',null).order('published_at',{ascending:false}).limit(24);
+      if(error){grid.innerHTML='<div class="col-span-full p-6 rounded-xl bg-rose-500/10 border border-rose-500/20 text-sm text-rose-300">Video library unavailable: '+error.message+'</div>';return;}
+      if(!data?.length){grid.innerHTML='<div class="col-span-full p-10 text-center rounded-2xl bg-dark-card border border-dark-border"><div class="text-white font-bold">No published product videos yet</div><div class="text-xs text-slate-500 mt-1">Videos appear here only after a real video job is published.</div></div>';return;}
+      grid.innerHTML=data.map(j=>videoCardHtml(j,false)).join('');
+      lucide.createIcons();
+    }
+
+    async function loadAdminVideoLibrary(){
+      const grid=document.getElementById('adminVideoLibraryGrid'); if(!grid||!supabaseClient)return;
+      grid.innerHTML='<div class="col-span-full p-8 text-center text-sm text-slate-500">Loading video jobs…</div>';
+      let q=supabaseClient.from('video_jobs').select('*').order('created_at',{ascending:false}).limit(100);
+      const status=document.getElementById('videoLibraryStatus')?.value;
+      if(status) q=q.eq('generation_status',status);
+      const {data,error}=await q;
+      if(error){grid.innerHTML='<div class="col-span-full p-6 rounded-xl bg-rose-500/10 text-rose-300">'+error.message+'</div>';return;}
+      if(!data?.length){grid.innerHTML='<div class="col-span-full p-10 text-center text-slate-500">No video jobs found in the real database.</div>';return;}
+      grid.innerHTML=data.map(j=>videoCardHtml(j,true)).join('');
+      lucide.createIcons();
+    }
+
+    async function loadScheduledVideos(){
+      const grid=document.getElementById('scheduledVideoGrid'); if(!grid||!supabaseClient)return;
+      const {data,error}=await supabaseClient.from('video_jobs').select('*').not('scheduled_at','is',null).order('scheduled_at',{ascending:true}).limit(100);
+      if(error){grid.innerHTML='<div class="p-6 text-rose-300">'+error.message+'</div>';return;}
+      grid.innerHTML=data?.length?data.map(j=>videoCardHtml(j,true)).join(''):'<div class="p-8 text-center text-slate-500">No scheduled videos.</div>';
+      lucide.createIcons();
+    }
+    async function loadPublishedVideos(){
+      const grid=document.getElementById('publishedVideoGrid'); if(!grid||!supabaseClient)return;
+      const {data,error}=await supabaseClient.from('video_jobs').select('*').eq('is_public',true).eq('generation_status','published').order('published_at',{ascending:false}).limit(100);
+      if(error){grid.innerHTML='<div class="p-6 text-rose-300">'+error.message+'</div>';return;}
+      grid.innerHTML=data?.length?data.map(j=>videoCardHtml(j,true)).join(''):'<div class="p-8 text-center text-slate-500">No published videos.</div>';
+      lucide.createIcons();
+    }
+
+    async function queueSelectedVideo(){
+      const id=document.getElementById('videoProductSelect')?.value;
+      const p=storeProducts.find(x=>String(x.id)===String(id));
+      if(!p||!adminSession||!supabaseClient)return alert('Admin session and a real product are required.');
+      const payload={product_id:p.id,created_by:adminSession.user.id,title:p.name+' — Product Video',description:p.short_description||'',generation_prompt:'Premium ecommerce product video using only verified product facts. No fake claims, reviews, specifications, discounts or copyrighted material.',aspect_ratio:document.getElementById('videoAspect')?.value||'9:16',resolution:document.getElementById('videoResolution')?.value||'1080p',duration_seconds:Number(document.getElementById('videoDuration')?.value||30),generation_status:'queued',generation_provider:'configured-video-provider'};
+      const {error}=await supabaseClient.from('video_jobs').insert(payload);
+      const msg=document.getElementById('videoGeneratorMessage');
+      if(error){if(msg)msg.textContent=error.message;return;}
+      if(msg)msg.textContent='Real video job created. Start generation from the library or use the server scheduler.';
+      loadVideoJobs(); loadAdminVideoLibrary();
+    }
+
+    async function loadVideoJobs(){
+      const list=document.getElementById('videoJobsList'); if(!list||!supabaseClient)return;
+      const {data,error}=await supabaseClient.from('video_jobs').select('*').order('created_at',{ascending:false}).limit(8);
+      if(error){list.innerHTML='<div class="text-xs text-rose-300">'+error.message+'</div>';return;}
+      list.innerHTML=data?.length?data.map(j=>'<div class="p-3 rounded-xl border border-slate-800 bg-slate-900/60"><div class="text-xs font-bold text-white">'+(j.title||'Untitled')+'</div><div class="text-[10px] text-slate-500 mt-1">'+(j.generation_status||'unknown')+' · '+(j.aspect_ratio||'9:16')+'</div><div class="flex gap-2 mt-2">'+(j.generation_status==='queued'||j.generation_status==='failed'?'<button onclick="generateVideoJob(\''+j.id+'\')" class="px-2.5 py-1 rounded-lg bg-brand-600 text-[10px] font-bold">Generate</button>':'')+'</div></div>').join(''):'<div class="text-xs text-slate-500">No video jobs yet.</div>';
+    }
+
+    async function generateVideoJob(id){
+      if(!adminSession||!supabaseClient)return alert('Admin session required.');
+      const {data,error}=await supabaseClient.functions.invoke('video-generator',{body:{job_id:id}});
+      if(error){alert(error.message);return;}
+      document.getElementById('videoGeneratorMessage').textContent=data?.ok?'Video provider accepted the job.':'Generation response received.';
+      loadVideoJobs(); loadAdminVideoLibrary();
+    }
+
+    function openManualVideoUpload(){
+      const el=document.getElementById('manualVideoModal');
+      if(el){el.classList.remove('hidden');el.classList.add('flex');loadManualVideoProducts();lucide.createIcons();}
+    }
+    function closeManualVideoUpload(){
+      const el=document.getElementById('manualVideoModal'); if(el){el.classList.add('hidden');el.classList.remove('flex');}
+    }
+    function loadManualVideoProducts(){
+      const sel=document.getElementById('manualVideoProduct'); if(sel)sel.innerHTML=storeProducts.map(p=>'<option value="'+p.id+'">'+String(p.name).replace(/</g,'&lt;')+'</option>').join('');
+    }
+    async function submitManualVideoUpload(event){
+      event.preventDefault();
+      if(!adminSession||!supabaseClient)return alert('Admin session required.');
+      const file=document.getElementById('manualVideoFile')?.files?.[0];
+      const productId=document.getElementById('manualVideoProduct')?.value;
+      if(!file||!productId)return alert('Select a real product and video file.');
+      if(!file.type.startsWith('video/'))return alert('Please select a video file.');
+      const submit=document.getElementById('manualVideoSubmit'); submit.disabled=true; submit.textContent='Uploading…';
+      try{
+        const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,'-');
+        const path='manual/'+adminSession.user.id+'/'+Date.now()+'-'+safeName;
+        const up=await supabaseClient.storage.from('product-videos').upload(path,file,{contentType:file.type,upsert:false,cacheControl:'31536000'});
+        if(up.error)throw up.error;
+        const pub=supabaseClient.storage.from('product-videos').getPublicUrl(path).data.publicUrl;
+        const scheduled=document.getElementById('manualVideoSchedule')?.value||null;
+        const isPublic=!scheduled && document.getElementById('manualVideoPublic')?.checked;
+        const product=storeProducts.find(p=>String(p.id)===String(productId));
+        const row={product_id:productId,created_by:adminSession.user.id,title:document.getElementById('manualVideoTitle').value.trim()||((product?.name||'Product')+' Video'),description:document.getElementById('manualVideoDescription').value.trim(),video_url:pub,preview_url:pub,aspect_ratio:document.getElementById('manualVideoAspect').value,resolution:'source',duration_seconds:0,generation_status:scheduled?'scheduled':(isPublic?'published':'completed'),generation_provider:'manual_upload',scheduled_at:scheduled,published_at:isPublic?new Date().toISOString():null,is_public:isPublic};
+        const ins=await supabaseClient.from('video_jobs').insert(row);
+        if(ins.error)throw ins.error;
+        closeManualVideoUpload();loadAdminVideoLibrary();loadPublishedVideos();alert('Real video uploaded and recorded.');
+      }catch(e){alert(e.message||'Video upload failed.');}
+      finally{submit.disabled=false;submit.textContent='Upload Video';}
+    }
+
+    async function togglePublishedVideo(id,publish){
+      if(!adminSession)return;
+      const patch=publish?{is_public:true,generation_status:'published',published_at:new Date().toISOString()}:{is_public:false,generation_status:'completed',published_at:null};
+      const {error}=await supabaseClient.from('video_jobs').update(patch).eq('id',id);
+      if(error)alert(error.message);else{loadAdminVideoLibrary();loadPublishedVideos();loadPublicVideos();}
+    }
+    async function retryVideoJob(id){await generateVideoJob(id);}
+    async function deleteVideoJob(id){
+      if(!confirm('Delete this video record? This does not delete your products or orders.'))return;
+      const {data,error}=await supabaseClient.from('video_jobs').select('video_url').eq('id',id).maybeSingle();
+      if(error)return alert(error.message);
+      if(data?.video_url&&data.video_url.includes('/storage/v1/object/public/product-videos/')){
+        const path=decodeURIComponent(data.video_url.split('/storage/v1/object/public/product-videos/')[1].split('?')[0]);
+        await supabaseClient.storage.from('product-videos').remove([path]);
+      }
+      const del=await supabaseClient.from('video_jobs').delete().eq('id',id);
+      if(del.error)alert(del.error.message);else{loadAdminVideoLibrary();loadScheduledVideos();loadPublishedVideos();}
+    }
+
+    async function downloadRealVideo(id,url){
+      const btnEvent=window.event;
+      if(btnEvent?.currentTarget){btnEvent.currentTarget.disabled=true;btnEvent.currentTarget.textContent='Downloading…';}
+      try{
+        const response=await fetch(url);
+        if(!response.ok)throw new Error('Video download failed.');
+        const blob=await response.blob();
+        const objectUrl=URL.createObjectURL(blob);
+        const a=document.createElement('a');a.href=objectUrl;a.download='ecommerce-product-video-'+id+'.mp4';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(objectUrl);
+        if(supabaseClient){const {data}=await supabaseClient.from('video_jobs').select('download_count').eq('id',id).maybeSingle();if(data)await supabaseClient.from('video_jobs').update({download_count:Number(data.download_count||0)+1}).eq('id',id);}
+      }catch(e){alert(e.message||'Download failed.');}
+      finally{if(btnEvent?.currentTarget){btnEvent.currentTarget.disabled=false;btnEvent.currentTarget.textContent='Download';}}
+    }
+    async function shareRealVideo(id,url){
+      try{
+        if(navigator.share){await navigator.share({title:'E-commerce Shoping Product Video',url:url});}
+        else{await navigator.clipboard.writeText(url);alert('Video link copied. You can choose the social app yourself.');}
+      }catch(e){}
+    }
+    function viewProductFromVideo(productId){
+      closeAppSidebar();
+      document.getElementById('productsCatalog')?.scrollIntoView({behavior:'smooth'});
+      const input=document.getElementById('searchInput'); if(input&&productId)input.value='';
+    }
+
+    async function loadVideoAutomationSettings(){
+      if(!supabaseClient||!adminSession)return;
+      const {data,error}=await supabaseClient.from('video_settings').select('*').limit(1).maybeSingle();
+      const msg=document.getElementById('videoAutomationMessage');
+      if(error){if(msg)msg.textContent='Could not load server settings: '+error.message;return;}
+      if(!data){if(msg)msg.textContent='No server video_settings row exists yet. Apply the existing additive migration first.';return;}
+      document.getElementById('videoAutoEnabled').checked=!!data.enabled;
+      document.getElementById('videoAutoPerDay').value=data.videos_per_day||1;
+      document.getElementById('videoAutoTime').value=String(data.generation_time||'10:00').slice(0,5);
+      document.getElementById('videoAutoTimezone').value=data.timezone||'Asia/Kolkata';
+      document.getElementById('videoAutoSelection').value=data.product_selection||'latest';
+      document.getElementById('videoAutoApproval').checked=data.require_admin_approval!==false;
+      document.getElementById('videoAutoAspect').value=data.default_aspect_ratio||'9:16';
+      document.getElementById('videoAutoResolution').value=data.default_resolution||'1080p';
+      if(msg)msg.textContent='Loaded from Supabase video_settings.';
+    }
+    async function saveVideoAutomationSettings(){
+      if(!supabaseClient||!adminSession)return alert('Admin session required.');
+      const payload={enabled:document.getElementById('videoAutoEnabled').checked,videos_per_day:Number(document.getElementById('videoAutoPerDay').value||1),generation_time:document.getElementById('videoAutoTime').value||'09:00',timezone:document.getElementById('videoAutoTimezone').value||'Asia/Kolkata',product_selection:document.getElementById('videoAutoSelection').value,require_admin_approval:document.getElementById('videoAutoApproval').checked,default_aspect_ratio:document.getElementById('videoAutoAspect').value,default_resolution:document.getElementById('videoAutoResolution').value,updated_at:new Date().toISOString()};
+      const {data:existing}=await supabaseClient.from('video_settings').select('id').limit(1).maybeSingle();
+      const q=existing?.id?supabaseClient.from('video_settings').update(payload).eq('id',existing.id):supabaseClient.from('video_settings').insert(payload);
+      const {error}=await q;
+      const msg=document.getElementById('videoAutomationMessage');
+      if(error){if(msg)msg.textContent=error.message;return;}
+      if(msg)msg.textContent='Saved to Supabase. Server scheduler uses these settings when configured.';
+    }
+
+    const _oldToggleAdminView = toggleAdminView;
+    toggleAdminView = async function(){
+      await _oldToggleAdminView();
+      setSidebarMode(isAdminMode);
+      if(isAdminMode){loadVideoJobs();loadAdminVideoLibrary();}
+    };
+
   </script>
 </body>
 </html>
