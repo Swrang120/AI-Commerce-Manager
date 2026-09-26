@@ -75,7 +75,7 @@
       <div class="flex items-center space-x-4">
         <button onclick="openAndroidModal()" class="text-brand-300 hover:text-white font-medium flex items-center space-x-1 transition">
           <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
-          <span>Android App APK</span>
+          <span>Website</span>
         </button>
         <span class="text-slate-600">|</span>
         <button onclick="toggleAdminView()" id="viewToggleBtn" class="text-amber-400 hover:text-amber-300 font-medium flex items-center space-x-1 transition">
@@ -101,7 +101,7 @@
               <span class="text-brand-500 font-extrabold">AI</span>
               <span class="text-slate-400 font-normal text-sm">Commerce</span>
             </span>
-            <p class="text-[10px] text-slate-400 tracking-wider uppercase font-semibold">Live Web & Android Platform</p>
+            <p class="text-[10px] text-slate-400 tracking-wider uppercase font-semibold">Live Web Commerce Platform</p>
           </div>
         </div>
 
@@ -160,7 +160,7 @@
             Smart Products Curated with <span class="bg-gradient-to-r from-brand-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">AI Precision</span>
           </h1>
           <p class="text-slate-400 text-sm sm:text-base leading-relaxed">
-            Real-time verified supplier stock, instant Razorpay checkout, honest customer reviews, and end-to-end shipment tracking on both Web and Android.
+            Real-time verified supplier stock, instant Razorpay checkout, honest customer reviews, and end-to-end shipment tracking on the web.
           </p>
           <div class="flex flex-wrap gap-3 pt-2">
             <a href="#productsCatalog" class="px-5 py-2.5 bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold rounded-xl shadow-lg shadow-brand-600/30 transition flex items-center space-x-2">
@@ -169,7 +169,7 @@
             </a>
             <button onclick="openAndroidModal()" class="px-5 py-2.5 bg-dark-card hover:bg-slate-800 border border-dark-border text-slate-200 text-sm font-semibold rounded-xl transition flex items-center space-x-2">
               <i data-lucide="download" class="w-4 h-4 text-emerald-400"></i>
-              <span>Download Android APK</span>
+              <span>Explore Website</span>
             </button>
           </div>
         </div>
@@ -193,8 +193,8 @@
           </div>
           <div class="p-4 rounded-xl bg-dark-card/90 border border-dark-border">
             <i data-lucide="cpu" class="w-6 h-6 text-purple-400 mb-2"></i>
-            <h4 class="text-xs font-bold text-white">100% Android Match</h4>
-            <p class="text-[11px] text-slate-400">Shared database and schema</p>
+            <h4 class="text-xs font-bold text-white">Real-time Backend Sync</h4>
+            <p class="text-[11px] text-slate-400">Shared Supabase database and schema</p>
           </div>
         </div>
       </div>
@@ -1836,7 +1836,7 @@
     }
 
     function getAuthRedirectUrl(){
-      const productionUrl='https://swrang120.github.io/AI-Commerce-Manager/';
+      const productionUrl='https://swrang120.github.io/Ecommerce-Shopping-/';
       const current=window.location.origin+window.location.pathname;
       return window.location.hostname==='localhost' || window.location.hostname==='127.0.0.1'
         ? productionUrl
