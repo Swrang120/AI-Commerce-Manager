@@ -187,6 +187,20 @@
     #customerView .customer-footer button{display:block;text-align:left;width:100%;padding:2px 0}
     @media(max-width:1023px){#customerView .customer-about-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#customerView .customer-policy-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media(max-width:767px){#customerView .customer-mobile-search-wrap{display:block;padding:10px 12px 2px}#customerView .customer-about-grid{grid-template-columns:1fr}#customerView .customer-policy-grid{grid-template-columns:1fr}#customerView .customer-info-band{margin-top:18px}}
+    /* Rich responsive customer account dashboard */
+    #customerProfileModal .profile-quick{display:flex;align-items:center;gap:10px;width:100%;padding:13px;border:1px solid #e5e7eb;border-radius:14px;background:#fff;text-align:left;color:#4f46e5;box-shadow:0 3px 12px rgba(15,23,42,.04)}
+    #customerProfileModal .profile-quick:hover{border-color:#c7d2fe;background:#f8faff}
+    #customerProfileModal .profile-quick>svg{width:18px;height:18px;flex:0 0 auto}
+    #customerProfileModal .profile-quick span{font-size:12px;font-weight:800;color:#111827}
+    #customerProfileModal .profile-quick small{display:block;color:#64748b;font-size:10px;font-weight:500;margin-top:2px}
+    #customerProfileModal .profile-stat{border:1px solid #e8edf5;background:#f8fafc;border-radius:14px;padding:11px}
+    #customerProfileModal .profile-stat svg{width:17px;height:17px;color:#4f46e5}
+    #customerProfileModal .profile-stat strong{display:block;font-size:11px;color:#111827;margin-top:5px}
+    #customerProfileModal .profile-stat span{display:block;font-size:9px;color:#64748b;margin-top:2px}
+    #customerProfileModal #customerProfileForm{background:#fff;border:1px solid #e5eaf2;border-radius:20px;padding:18px}
+    #customerProfileModal #customerProfileForm label{color:#475569!important;font-weight:700}
+    #customerProfileModal #customerProfileForm input{background:#f8fafc!important;color:#111827!important;border-color:#e2e8f0!important}
+    #customerProfileModal #customerProfileForm input:focus{border-color:#818cf8!important;box-shadow:0 0 0 3px rgba(99,102,241,.1)}
   </style>
 </head>
 <body class="bg-dark-bg text-slate-100 min-h-screen flex flex-col selection:bg-brand-600 selection:text-white">
@@ -3058,6 +3072,7 @@
       updateCustomerAddressChip();
       const u=customerSession.user;
       document.getElementById('profileFullName').value=customerProfileData.full_name||u.user_metadata?.full_name||'';
+      const profileCardName=document.getElementById('profileCardName');if(profileCardName)profileCardName.textContent=customerProfileData.full_name||u.user_metadata?.full_name||'Customer';
       document.getElementById('profilePhone').value=customerProfileData.phone||u.phone||'';
       document.getElementById('profileAddress1').value=customerProfileData.address_line1||'';
       document.getElementById('profileAddress2').value=customerProfileData.address_line2||'';
