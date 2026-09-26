@@ -1674,7 +1674,7 @@
         const isWishlisted = wishlist.includes(product.id);
         const discountPct = Math.round(((product.compare_at_price - product.price) / product.compare_at_price) * 100);
         return `
-          <div class="group bg-dark-card border border-dark-border rounded-2xl overflow-hidden hover:border-brand-500/50 hover:shadow-xl hover:shadow-brand-500/5 transition flex flex-col justify-between">
+          <div onclick="openProductDetailModal('${product.id}')" class="group bg-dark-card border border-dark-border rounded-2xl overflow-hidden hover:border-brand-500/50 hover:shadow-xl hover:shadow-brand-500/5 transition flex flex-col justify-between cursor-pointer">
             <div class="relative overflow-hidden cursor-pointer" onclick="openProductDetailModal('${product.id}')">
               <img src="${product.image_url}" alt="${product.name}" class="w-full h-48 object-cover group-hover:scale-105 transition duration-300">
               <button onclick="event.stopPropagation(); toggleWishlist('${product.id}')" class="absolute top-3 right-3 p-2 rounded-full glass border border-white/10 ${isWishlisted ? 'text-pink-500' : 'text-slate-300'} hover:text-pink-400 transition">
