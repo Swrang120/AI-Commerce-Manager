@@ -989,7 +989,13 @@
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
         <div class="space-y-3">
-          <img id="modalProductImg" src="" alt="Product" class="w-full h-64 object-cover rounded-xl border border-dark-border bg-slate-900">
+          <div class="relative rounded-2xl overflow-hidden border border-dark-border bg-slate-950 group">
+            <img id="modalProductImg" src="" alt="Product" class="w-full h-72 sm:h-80 md:h-96 object-contain bg-white cursor-zoom-in transition duration-300">
+            <button type="button" onclick="productGalleryPrev()" class="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 text-white grid place-items-center hover:bg-black/80"><i data-lucide="chevron-left"></i></button>
+            <button type="button" onclick="productGalleryNext()" class="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 text-white grid place-items-center hover:bg-black/80"><i data-lucide="chevron-right"></i></button>
+            <button type="button" onclick="zoomProductImage()" class="absolute right-3 bottom-3 px-3 py-2 rounded-xl bg-black/60 text-white text-[11px] font-bold backdrop-blur">⌕ Zoom</button>
+          </div>
+          <div id="productGalleryThumbs" class="flex gap-2 overflow-x-auto pb-1"></div>
           <div class="flex items-center justify-between">
             <span id="modalProductCategory" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-300 font-medium">Category</span>
             <span class="text-xs font-semibold text-emerald-600">Verified Product</span>
@@ -1002,6 +1008,15 @@
               <span id="modalProductComparePrice" class="text-sm text-slate-500 line-through">₹0</span>
             </div>
             <p id="modalProductDesc" class="text-xs text-slate-300 leading-relaxed"></p>
+            <div id="modalProductMeta" class="grid grid-cols-2 gap-2 mt-3"></div>
+            <div id="modalProductSpecs" class="mt-3 rounded-xl border border-dark-border bg-slate-900/60 p-3 hidden">
+              <h4 class="text-xs font-extrabold text-white mb-2">Product details</h4>
+              <div id="modalProductSpecsList" class="space-y-1.5 text-[11px] text-slate-400"></div>
+            </div>
+            <div id="modalProduct3D" class="hidden mt-3 rounded-xl border border-brand-500/20 bg-brand-500/5 p-3">
+              <div class="flex items-center gap-2 text-xs font-extrabold text-brand-300"><i data-lucide="box"></i> 3D Product View</div>
+              <a id="modalProduct3DLink" target="_blank" rel="noopener noreferrer" class="inline-flex mt-2 px-3 py-2 rounded-lg bg-brand-600 text-white text-[11px] font-bold">Open 3D Model</a>
+            </div>
           </div>
 
           <div class="space-y-2 pt-4">
@@ -1570,7 +1585,7 @@
       try {
         const { data, error } = await supabaseClient
           .from('products')
-          .select('id,name,slug,description,short_description,selling_price,compare_at_price,stock_quantity,images,tags,categories(name)')
+          .select('*, categories(name)')
           .eq('status', 'active');
         if (!error && data && data.length > 0) {
           storeProducts = data.map(p => ({
@@ -1683,22 +1698,74 @@
       lucide.createIcons();
     }
 
-    // ================= PRODUCT DETAIL & REVIEWS (Rule 31) =================
+    // ================= PREMIUM PRODUCT DETAIL & GALLERY =================
+    let productGalleryImages=[];
+    let productGalleryIndex=0;
+
+    function getProductImages(product){
+      const raw=Array.isArray(product?.images)?product.images:[];
+      const urls=raw.filter(x=>typeof x==='string' && /^https?:\\/\\//i.test(x));
+      if(product?.image_url && !urls.includes(product.image_url)) urls.unshift(product.image_url);
+      return [...new Set(urls)];
+    }
+
+    function renderProductGallery(){
+      const main=document.getElementById('modalProductImg');
+      const thumbs=document.getElementById('productGalleryThumbs');
+      if(!main)return;
+      if(!productGalleryImages.length)productGalleryImages=[INITIAL_PRODUCTS[0].image_url];
+      productGalleryIndex=Math.max(0,Math.min(productGalleryIndex,productGalleryImages.length-1));
+      main.src=productGalleryImages[productGalleryIndex];
+      if(thumbs){
+        thumbs.innerHTML=productGalleryImages.map((src,i)=>'<button type="button" onclick="setProductGalleryImage('+i+')" class="shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 '+(i===productGalleryIndex?'border-brand-500':'border-slate-700')+' bg-white"><img src="'+src.replace(/"/g,'&quot;')+'" class="w-full h-full object-contain" alt="Product photo '+(i+1)+'"></button>').join('');
+      }
+    }
+    function setProductGalleryImage(i){productGalleryIndex=i;renderProductGallery();}
+    function productGalleryPrev(){if(!productGalleryImages.length)return;productGalleryIndex=(productGalleryIndex-1+productGalleryImages.length)%productGalleryImages.length;renderProductGallery();}
+    function productGalleryNext(){if(!productGalleryImages.length)return;productGalleryIndex=(productGalleryIndex+1)%productGalleryImages.length;renderProductGallery();}
+    function zoomProductImage(){
+      const src=productGalleryImages[productGalleryIndex]; if(!src)return;
+      const m=document.createElement('div');m.className='fixed inset-0 z-[140] bg-black/90 flex items-center justify-center p-4';
+      m.innerHTML='<button onclick="this.parentElement.remove()" class="absolute top-4 right-4 w-11 h-11 rounded-full bg-white/10 text-white text-xl">✕</button><img src="'+src.replace(/"/g,'&quot;')+'" class="max-w-full max-h-[92vh] object-contain rounded-xl" alt="Product image">';
+      m.onclick=e=>{if(e.target===m)m.remove()};document.body.appendChild(m);
+    }
+
+    function renderProductMeta(product){
+      const meta=document.getElementById('modalProductMeta');
+      const specs=document.getElementById('modalProductSpecs');
+      const list=document.getElementById('modalProductSpecsList');
+      if(meta)meta.innerHTML='<div class="rounded-xl bg-slate-900/70 border border-dark-border p-2.5"><span class="block text-[9px] text-slate-500 uppercase">Photos</span><b class="text-xs text-white">'+productGalleryImages.length+' photos</b></div><div class="rounded-xl bg-slate-900/70 border border-dark-border p-2.5"><span class="block text-[9px] text-slate-500 uppercase">Availability</span><b class="text-xs text-emerald-400">Verified</b></div>';
+      const entries=[];
+      if(product.sku)entries.push(['SKU',product.sku]);
+      if(product.brand)entries.push(['Brand',product.brand]);
+      if(product.category)entries.push(['Category',product.category]);
+      if(product.stock_quantity!==undefined && product.stock_quantity!==null)entries.push(['Stock',String(product.stock_quantity)]);
+      if(Array.isArray(product.tags)&&product.tags.length)entries.push(['Tags',product.tags.join(', ')]);
+      if(specs&&list){
+        if(entries.length){list.innerHTML=entries.map(x=>'<div class="flex justify-between gap-3"><span>'+x[0]+'</span><b class="text-slate-200 text-right">'+x[1]+'</b></div>').join('');specs.classList.remove('hidden');}
+        else specs.classList.add('hidden');
+      }
+      const model=product.model_3d_url||product.model_url||product.three_d_url;
+      const box=document.getElementById('modalProduct3D'),link=document.getElementById('modalProduct3DLink');
+      if(box&&link&&model){link.href=model;box.classList.remove('hidden');}else if(box)box.classList.add('hidden');
+    }
+
     function openProductDetailModal(productId) {
-      const product = storeProducts.find(p => p.id === productId);
+      const product = storeProducts.find(p => String(p.id) === String(productId));
       if (!product) return;
       currentModalProduct = product;
-
+      productGalleryImages=getProductImages(product);
+      productGalleryIndex=0;
       document.getElementById('modalProductTitle').innerText = product.name;
-      document.getElementById('modalProductImg').src = product.image_url;
-      document.getElementById('modalProductCategory').innerText = product.category;
-      document.getElementById('modalProductStock').innerText = `In Stock (${product.stock_quantity} available)`;
-      document.getElementById('modalProductPrice').innerText = `₹${product.price.toLocaleString('en-IN')}`;
-      document.getElementById('modalProductComparePrice').innerText = `₹${product.compare_at_price.toLocaleString('en-IN')}`;
-      document.getElementById('modalProductDesc').innerText = product.short_description || 'High performance quality electronics and smart accessories.';
+      document.getElementById('modalProductCategory').innerText = product.category || 'Product';
+      document.getElementById('modalProductStock').innerText = 'Verified Product';
+      document.getElementById('modalProductPrice').innerText = '₹'+Number(product.price||0).toLocaleString('en-IN');
+      document.getElementById('modalProductComparePrice').innerText = '₹'+Number(product.compare_at_price||product.price||0).toLocaleString('en-IN');
+      document.getElementById('modalProductDesc').innerText = product.description || product.short_description || 'Premium quality product.';
       document.getElementById('modalQty').value = 1;
-
-      loadProductReviews(productId);
+      renderProductGallery();
+      renderProductMeta(product);
+      loadProductReviews(product.id);
       document.getElementById('productDetailModal').classList.remove('hidden');
       lucide.createIcons();
     }
