@@ -80,6 +80,59 @@
     .video-field:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.12)}
     .video-kpi{padding:14px;border:1px solid #263244;background:#0f172a;border-radius:14px}
 
+  
+    /* ===== E-COMMERCE SHOPING CUSTOMER EXPERIENCE ===== */
+    #customerView{background:#f5f7fb;color:#172033}
+    #customerView .customer-store-strip{background:#fff;border-bottom:1px solid #e7ebf2;position:sticky;top:64px;z-index:30;box-shadow:0 2px 10px rgba(15,23,42,.04)}
+    #customerView .customer-store-strip-inner{max-width:1280px;margin:auto;padding:10px 16px;display:flex;align-items:center;gap:10px;overflow-x:auto;scrollbar-width:none}
+    #customerView .customer-store-strip-inner::-webkit-scrollbar{display:none}
+    #customerView .store-chip{flex:0 0 auto;display:flex;align-items:center;gap:7px;padding:8px 12px;border:1px solid #e5eaf2;border-radius:999px;background:#fff;color:#334155;font-size:12px;font-weight:700;white-space:nowrap}
+    #customerView .store-chip:hover{border-color:#c7d2fe;background:#f8faff;color:#4338ca}
+    #customerView .store-chip.primary{background:#eef2ff;border-color:#c7d2fe;color:#4338ca}
+    #customerView .store-chip.address{max-width:300px}
+    #customerView .store-chip.address span{overflow:hidden;text-overflow:ellipsis}
+    #customerView .customer-hero{background:linear-gradient(135deg,#eef2ff 0%,#ffffff 48%,#f5f3ff 100%)!important;border-bottom:1px solid #e7ebf2!important}
+    #customerView .customer-hero h1{color:#111827!important}
+    #customerView .customer-hero p{color:#64748b!important}
+    #customerView .customer-hero .bg-dark-card\/90{background:rgba(255,255,255,.92)!important;border-color:#e5e7eb!important;box-shadow:0 10px 30px rgba(15,23,42,.06)}
+    #customerView .customer-hero .text-white{color:#111827!important}
+    #customerView .customer-hero .text-slate-400{color:#64748b!important}
+    #customerView .customer-section{max-width:1280px;margin:0 auto;padding-left:16px;padding-right:16px}
+    #customerView #categoryPills{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding:4px 2px 10px}
+    #customerView #categoryPills::-webkit-scrollbar{display:none}
+    #customerView #categoryPills button{flex:0 0 auto!important;border-radius:12px!important;background:#fff!important;border:1px solid #e5e7eb!important;color:#475569!important;box-shadow:0 2px 8px rgba(15,23,42,.04)}
+    #customerView #categoryPills button:hover{border-color:#c7d2fe!important;color:#4338ca!important}
+    #customerView #productsCatalog{color:#172033}
+    #customerView #productsGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}
+    #customerView #productsGrid > *{background:#fff!important;border:1px solid #e8ecf2!important;border-radius:16px!important;box-shadow:0 4px 16px rgba(15,23,42,.05);overflow:hidden;transition:transform .18s ease,box-shadow .18s ease}
+    #customerView #productsGrid > *:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(15,23,42,.10)}
+    #customerView .video-card{background:#fff;border-color:#e5e7eb;box-shadow:0 4px 16px rgba(15,23,42,.05)}
+    #customerView .video-card .text-white{color:#111827!important}
+    #customerView .video-card .text-slate-400,#customerView .video-card .text-slate-500{color:#64748b!important}
+    #customerView .video-card .bg-slate-800{background:#f1f5f9!important;color:#334155!important}
+    #customerView .customer-bottom-nav{display:none}
+    #customerView .customer-bottom-nav button{flex:1;min-width:0;padding:8px 4px;color:#64748b;font-size:10px;font-weight:800}
+    #customerView .customer-bottom-nav button.active{color:#4f46e5}
+    @media(min-width:768px){
+      #customerView #productsGrid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:18px!important}
+    }
+    @media(min-width:1100px){
+      #customerView #productsGrid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:20px!important}
+      #customerView .customer-section{padding-left:24px;padding-right:24px}
+    }
+    @media(max-width:767px){
+      body{padding-bottom:64px}
+      #customerView .customer-store-strip{top:64px}
+      #customerView .customer-store-strip-inner{padding:8px 12px}
+      #customerView .store-chip{padding:7px 10px;font-size:11px}
+      #customerView .store-chip.address{max-width:220px}
+      #customerView .customer-hero{padding-top:28px!important;padding-bottom:28px!important}
+      #customerView .customer-hero h1{font-size:30px!important}
+      #customerView .customer-hero .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      #customerView #productsGrid > *{border-radius:14px!important}
+      #customerView .customer-bottom-nav{display:flex;position:fixed;left:0;right:0;bottom:0;height:62px;background:rgba(255,255,255,.97);backdrop-filter:blur(14px);border-top:1px solid #e5e7eb;z-index:90;box-shadow:0 -8px 25px rgba(15,23,42,.08)}
+    }
+
   </style>
 </head>
 <body class="bg-dark-bg text-slate-100 min-h-screen flex flex-col selection:bg-brand-600 selection:text-white">
@@ -235,6 +288,17 @@
 
   <!-- ================= CUSTOMER STOREFRONT VIEW ================= -->
   <main id="customerView" class="flex-1 pb-16">
+    <div class="customer-store-strip" aria-label="Shopping shortcuts">
+      <div class="customer-store-strip-inner">
+        <button class="store-chip primary" onclick="document.getElementById('productsCatalog')?.scrollIntoView({behavior:'smooth'})"><i data-lucide="shopping-bag" class="w-4 h-4"></i><span>Shop</span></button>
+        <button class="store-chip" onclick="customerNav('categories')"><i data-lucide="layers" class="w-4 h-4"></i><span>Categories</span></button>
+        <button class="store-chip address" onclick="customerNav('profile')"><i data-lucide="map-pin" class="w-4 h-4 text-rose-500"></i><span id="customerAddressChip">Add delivery address</span></button>
+        <button class="store-chip" onclick="openWishlistDrawer()"><i data-lucide="heart" class="w-4 h-4 text-pink-500"></i><span>Wishlist</span></button>
+        <button class="store-chip" onclick="openCartDrawer()"><i data-lucide="shopping-cart" class="w-4 h-4 text-indigo-500"></i><span>Cart</span></button>
+        <button class="store-chip" onclick="customerNav('orders')"><i data-lucide="package-check" class="w-4 h-4 text-emerald-500"></i><span>Orders</span></button>
+      </div>
+    </div>
+
     <!-- Hero Banner -->
     <div class="relative overflow-hidden bg-gradient-to-b from-brand-950/40 via-dark-bg to-dark-bg border-b border-dark-border py-12 px-4 sm:px-6 lg:px-8">
       <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
