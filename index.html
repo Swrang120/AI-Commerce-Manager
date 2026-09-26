@@ -194,7 +194,7 @@
     #customerView #productsGrid .customer-price-wrap{display:flex;align-items:baseline;gap:4px;min-width:0}
     #customerView #productsGrid .customer-price-currency{color:#111827!important;font-size:13px;font-weight:800}
     #customerView #productsGrid .customer-buy{white-space:nowrap}
-    @media(max-width:560px){#customerView #productsGrid .customer-price-main{font-size:18px!important}#customerView #productsGrid .customer-price-old{font-size:10px!important}}
+    @media(max-width:560px){#customerView #productsGrid .customer-price-main{font-size:19px!important}#customerView #productsGrid .customer-price-old{font-size:10px!important}} #customerView #productsGrid .customer-price-wrap{background:#f8fafc;border-radius:10px;padding:7px 9px;flex-wrap:wrap;row-gap:2px} #customerView #productsGrid .customer-price-main{font-variant-numeric:tabular-nums} #customerView #productsGrid .customer-price-currency{font-size:14px!important} #customerView #productsGrid .customer-price-old{margin-left:2px}
 
     /* Rich responsive customer account dashboard */
     #customerProfileModal .profile-quick{display:flex;align-items:center;gap:10px;width:100%;padding:13px;border:1px solid #e5e7eb;border-radius:14px;background:#fff;text-align:left;color:#4f46e5;box-shadow:0 3px 12px rgba(15,23,42,.04)}
@@ -3146,7 +3146,7 @@
         const {data,error}=await supabaseClient.from('customer_profiles').select('*').eq('id',customerSession.user.id).maybeSingle();
         if(!error)remote=data;
       }catch(e){}
-      const remoteSafe=remote?Object.fromEntries(Object.entries(remote).filter(([_,v])=>v!==null&&v!==undefined&&v!=='')):{}; customerProfileData={...local,...remoteSafe};
+      const remoteSafe=remote?Object.fromEntries(Object.entries(remote).filter(([_,v])=>v!==null&&v!==undefined&&v!=='')):{}; const savedAvatar=localStorage.getItem('nexus_customer_avatar_'+customerSession.user.id)||''; if(savedAvatar&&!local.avatar_data)local.avatar_data=savedAvatar; customerProfileData={...local,...remoteSafe,avatar_data:(local.avatar_data||savedAvatar||remoteSafe.avatar_data||'')};
       updateCustomerAddressChip();
       const u=customerSession.user;
       document.getElementById('profileFullName').value=customerProfileData.full_name||u.user_metadata?.full_name||'';
@@ -3188,7 +3188,7 @@
     function removeCustomerAvatar(){
       if(!customerProfileData)customerProfileData={};
       customerProfileData.avatar_data='';
-      const saved=getLocalCustomerProfile()||{}; localStorage.setItem(profileLocalKey(),JSON.stringify({...saved,...customerProfileData,avatar_data:''}));
+      const saved=getLocalCustomerProfile()||{}; localStorage.setItem(profileLocalKey(),JSON.stringify({...saved,...customerProfileData,avatar_data:''})); if(customerSession?.user?.id)localStorage.removeItem('nexus_customer_avatar_'+customerSession.user.id);
       setProfileAvatar('');
       const input=document.getElementById('customerAvatarInput');if(input)input.value='';
     }
@@ -3211,7 +3211,7 @@
           const data=canvas.toDataURL('image/jpeg',0.72);
           if(!customerProfileData)customerProfileData={};
           customerProfileData.avatar_data=data;
-          const saved=getLocalCustomerProfile()||{}; localStorage.setItem(profileLocalKey(),JSON.stringify({...saved,...customerProfileData,avatar_data:data}));
+          const saved=getLocalCustomerProfile()||{}; localStorage.setItem(profileLocalKey(),JSON.stringify({...saved,...customerProfileData,avatar_data:data})); if(customerSession?.user?.id)localStorage.setItem('nexus_customer_avatar_'+customerSession.user.id,data);
           setProfileAvatar(data);
         };
         img.src=reader.result;
