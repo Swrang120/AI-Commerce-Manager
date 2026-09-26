@@ -145,6 +145,37 @@ Deno.serve(async (req: Request) => {
       return json({ error: "Gemini/R2 storage secrets are not configured" }, 503);
     }
 
+    // Global campaign queue: process one queued country/language variant per run.
+    const { data: globalQueue } = await admin.from("video_jobs")
+      .select("*,products(id,name,description,short_description,price,images)")
+      .eq("generation_status","queued")
+      .not("country_code","is",null)
+      .not("language_code","is",null)
+      .order("created_at",{ascending:true})
+      .limit(1);
+    if(globalQueue?.[0]){
+      const job=globalQueue[0];
+      const product=job.products;
+      if(product){
+        const prompt=[
+          "Create a premium e-commerce product promotion video.",
+          "Localize narration, on-screen wording and natural audio for language code: "+String(job.language_code||"en")+".",
+          "Target market country code: "+String(job.country_code||"")+" and locale: "+String(job.locale||"")+".",
+          "Use natural local phrasing, not literal machine translation.",
+          "Use only verified product facts. Never invent specifications, reviews, discounts, certifications, prices, or performance claims.",
+          "Show the product clearly with smooth commercial lighting and camera motion.",
+          "Vertical 9:16 social-commerce video with appropriate local audio.",
+          "Persistent watermark: "+BRAND+", bottom-right.",
+          "Product name: "+product.name,
+          "Current price: "+String(product.price??""),
+          "Description: "+String(product.description??product.short_description??"")
+        ].join("\\n");
+        const operation=await startVeo(prompt,await productImage(product));
+        await admin.from("video_jobs").update({generation_status:"processing",generation_provider:"google-veo-3.1",provider_operation_id:operation,generation_prompt:prompt,duration_seconds:8,updated_at:new Date().toISOString()}).eq("id",job.id);
+        return json({ok:true,global_job_id:job.id,status:"processing"});
+      }
+    }
+
     // Finish one previously started generation first.
     const { data: pending } = await admin.from("video_jobs")
       .select("*")
