@@ -2963,6 +2963,7 @@
         if(!error)remote=data;
       }catch(e){}
       customerProfileData={...local,...(remote||{})};
+      updateCustomerAddressChip();
       const u=customerSession.user;
       document.getElementById('profileFullName').value=customerProfileData.full_name||u.user_metadata?.full_name||'';
       document.getElementById('profilePhone').value=customerProfileData.phone||u.phone||'';
@@ -2976,6 +2977,13 @@
       setProfileAvatar(customerProfileData.avatar_data||'');
     }
 
+    function updateCustomerAddressChip(){
+      const el=document.getElementById('customerAddressChip');
+      if(!el)return;
+      const p=customerProfileData||getLocalCustomerProfile()||{};
+      const parts=[p.address1,p.city,p.state,p.postal].filter(Boolean);
+      el.textContent=parts.length?parts.join(', '):'Add delivery address';
+    }
     function openCustomerProfile(){
       if(!customerSession){
         openCustomerAuth();
