@@ -1589,6 +1589,7 @@
         console.log("Using cached products catalog:", err);
       }
       renderProducts(storeProducts);
+      if(typeof initGlobalVideoAutomation==='function') initGlobalVideoAutomation();
     }
 
     function renderCategoryPills() {
