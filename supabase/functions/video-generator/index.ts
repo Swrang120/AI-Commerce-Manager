@@ -81,6 +81,18 @@ async function uploadR2(jobId: string, bytes: Uint8Array) {
   await r2Client().send(new PutObjectCommand({ Bucket: r2Bucket, Key: key, Body: bytes, ContentType: "video/mp4", CacheControl: "public, max-age=31536000" }));
   return `${r2PublicBaseUrl}/${key}`;
 }
+async function triggerYoutubeUpload(jobId: string) {
+  if (!serviceRoleKey) return;
+  try {
+    await fetch(`${supabaseUrl}/functions/v1/youtube-upload`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + serviceRoleKey },
+      body: JSON.stringify({ job_id: jobId })
+    });
+  } catch {
+    // YouTube upload is best-effort; the R2 video remains published if YouTube is not configured.
+  }
+}
 
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json({ error: "POST required" }, 405);
@@ -142,6 +154,7 @@ Deno.serve(async (req: Request) => {
       error_message: null,
       updated_at: now
     }).eq("id", job.id);
+    await triggerYoutubeUpload(job.id);
 
     return json({ ok: true, job_id: job.id, status: "published", video_url: url });
   } catch (error) {
