@@ -1512,7 +1512,7 @@
 
     // App Initialization
     document.addEventListener('DOMContentLoaded', () => {
-      lucide.createIcons();\n  if(typeof initGlobalVideoAutomation==='function')initGlobalVideoAutomation();
+      lucide.createIcons();
       renderCategoryPills();
       fetchSupabaseProducts();
       updateCartUI();
@@ -1589,7 +1589,6 @@
         console.log("Using cached products catalog:", err);
       }
       renderProducts(storeProducts);
-      if(typeof initGlobalVideoAutomation==='function') initGlobalVideoAutomation();
     }
 
     function renderCategoryPills() {
@@ -3458,141 +3457,5 @@
     document.body.appendChild(modal);lucide.createIcons();
   }
 </script>
-
-<style>
-.global-video-panel{margin-top:18px;background:linear-gradient(135deg,#0f172a,#111827);border:1px solid #293548;border-radius:22px;padding:18px;box-shadow:0 18px 45px rgba(0,0,0,.16)}
-.global-video-panel h3{font-size:16px;font-weight:900;color:#fff}
-.global-video-panel p{font-size:11px;line-height:1.6;color:#94a3b8}
-.global-video-grid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:14px}
-@media(min-width:800px){.global-video-grid{grid-template-columns:1fr 1fr}}
-.global-video-field{width:100%;background:#0b1220;border:1px solid #334155;border-radius:12px;padding:10px 12px;color:#fff;font-size:12px;outline:none}
-.global-video-field:focus{border-color:#818cf8;box-shadow:0 0 0 3px rgba(99,102,241,.12)}
-.global-video-checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:190px;overflow:auto;padding:8px;background:#0b1220;border:1px solid #273449;border-radius:12px}
-@media(min-width:800px){.global-video-checks{grid-template-columns:repeat(3,minmax(0,1fr))}}
-.global-video-check{display:flex;align-items:center;gap:7px;color:#cbd5e1;font-size:11px;padding:7px;border-radius:9px;background:#111827}
-.global-video-check input{accent-color:#6366f1}
-.global-video-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
-.global-video-btn{border:0;border-radius:11px;padding:10px 14px;font-size:11px;font-weight:800;cursor:pointer}
-.global-video-btn.primary{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff}
-.global-video-btn.secondary{background:#1e293b;color:#cbd5e1;border:1px solid #334155}
-.global-video-status{margin-top:12px;padding:10px 12px;border-radius:11px;background:#0b1220;color:#94a3b8;font-size:11px;display:none}
-</style>
-<div id="globalVideoAutomationPanel" class="global-video-panel" style="display:none">
-  <div class="flex items-start justify-between gap-3">
-    <div>
-      <h3>🌍 Global AI Video Automation</h3>
-      <p>Generate localized product-video variants for multiple countries and languages. Each variant is tracked separately so one failed upload never hides the others.</p>
-    </div>
-    <span class="text-[10px] px-2 py-1 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/20">GLOBAL CAMPAIGN</span>
-  </div>
-  <div class="global-video-grid">
-    <div>
-      <label class="text-[11px] text-slate-400">Product</label>
-      <select id="globalVideoProduct" class="global-video-field mt-1"><option value="">Select product</option></select>
-    </div>
-    <div>
-      <label class="text-[11px] text-slate-400">Campaign name</label>
-      <input id="globalVideoCampaign" class="global-video-field mt-1" placeholder="Global Product Campaign">
-    </div>
-    <div>
-      <label class="text-[11px] text-slate-400">Languages</label>
-      <div id="globalVideoLanguages" class="global-video-checks mt-1"></div>
-    </div>
-    <div>
-      <label class="text-[11px] text-slate-400">Countries / markets</label>
-      <div class="global-video-actions" style="margin-top:0;margin-bottom:7px">
-        <button class="global-video-btn secondary" type="button" onclick="selectAllGlobalCountries(true)">Select all</button>
-        <button class="global-video-btn secondary" type="button" onclick="selectAllGlobalCountries(false)">Clear</button>
-      </div>
-      <div id="globalVideoCountries" class="global-video-checks"></div>
-    </div>
-    <div>
-      <label class="text-[11px] text-slate-400">Target</label>
-      <select id="globalVideoPlatform" class="global-video-field mt-1">
-        <option value="youtube">YouTube</option>
-        <option value="website">Website video library</option>
-        <option value="youtube,website">YouTube + Website</option>
-      </select>
-    </div>
-    <div>
-      <label class="text-[11px] text-slate-400">Timezone / scheduling</label>
-      <select id="globalVideoTimezone" class="global-video-field mt-1">
-        <option>Asia/Kolkata</option><option>UTC</option><option>America/New_York</option><option>America/Los_Angeles</option><option>Europe/London</option><option>Europe/Paris</option><option>Asia/Tokyo</option><option>Asia/Singapore</option><option>Australia/Sydney</option>
-      </select>
-    </div>
-  </div>
-  <div class="global-video-actions">
-    <button class="global-video-btn primary" type="button" onclick="queueGlobalVideoCampaign()">🚀 Queue Global Campaign</button>
-    <button class="global-video-btn secondary" type="button" onclick="openGlobalVideoInfo()">ℹ️ How it works</button>
-  </div>
-  <div id="globalVideoStatus" class="global-video-status"></div>
-</div>
-<script>
-const GLOBAL_VIDEO_LANGUAGES=[
-  ['en','English'],['hi','Hindi'],['as','Assamese'],['bn','Bengali'],['bho','Bhojpuri'],['brx','Bodo'],
-  ['ta','Tamil'],['te','Telugu'],['ml','Malayalam'],['kn','Kannada'],['mr','Marathi'],['gu','Gujarati'],
-  ['pa','Punjabi'],['ur','Urdu'],['ne','Nepali'],['si','Sinhala'],['th','Thai'],['id','Indonesian'],
-  ['ms','Malay'],['vi','Vietnamese'],['ja','Japanese'],['ko','Korean'],['zh','Chinese'],['fr','French'],
-  ['de','German'],['es','Spanish'],['pt','Portuguese'],['it','Italian'],['nl','Dutch'],['tr','Turkish'],
-  ['ar','Arabic'],['he','Hebrew'],['fa','Persian'],['sw','Swahili'],['am','Amharic'],['fil','Filipino']
-];
-const GLOBAL_VIDEO_COUNTRIES=[
-['IN','India'],['US','United States'],['GB','United Kingdom'],['CA','Canada'],['AU','Australia'],['NZ','New Zealand'],
-['AE','United Arab Emirates'],['SA','Saudi Arabia'],['QA','Qatar'],['KW','Kuwait'],['OM','Oman'],['BH','Bahrain'],
-['SG','Singapore'],['MY','Malaysia'],['ID','Indonesia'],['TH','Thailand'],['VN','Vietnam'],['PH','Philippines'],
-['JP','Japan'],['KR','South Korea'],['CN','China'],['TW','Taiwan'],['HK','Hong Kong'],
-['FR','France'],['DE','Germany'],['IT','Italy'],['ES','Spain'],['PT','Portugal'],['NL','Netherlands'],['BE','Belgium'],
-['CH','Switzerland'],['AT','Austria'],['SE','Sweden'],['NO','Norway'],['DK','Denmark'],['FI','Finland'],['IE','Ireland'],
-['PL','Poland'],['CZ','Czechia'],['RO','Romania'],['GR','Greece'],['TR','Türkiye'],
-['BR','Brazil'],['MX','Mexico'],['AR','Argentina'],['CL','Chile'],['CO','Colombia'],['PE','Peru'],
-['ZA','South Africa'],['NG','Nigeria'],['KE','Kenya'],['GH','Ghana'],['EG','Egypt'],['MA','Morocco']
-];
-function initGlobalVideoAutomation(){
-  const panel=document.getElementById('globalVideoAutomationPanel'); if(!panel)return;
-  panel.style.display=typeof isAdminMode!=='undefined'&&isAdminMode?'block':'none';
-  const p=document.getElementById('globalVideoProduct');
-  if(p){
-    p.innerHTML='<option value="">Select product</option>'+storeProducts.map(x=>'<option value="'+x.id+'">'+String(x.name||'Product').replace(/</g,'&lt;')+'</option>').join('');
-  }
-  const l=document.getElementById('globalVideoLanguages');
-  if(l&&!l.dataset.ready){l.innerHTML=GLOBAL_VIDEO_LANGUAGES.map(x=>'<label class="global-video-check"><input type="checkbox" value="'+x[0]+'" '+(['en','hi'].includes(x[0])?'checked':'')+'><span>'+x[1]+'</span></label>').join('');l.dataset.ready='1';}
-  const co=document.getElementById('globalVideoCountries');
-  if(co&&!co.dataset.ready){co.innerHTML=GLOBAL_VIDEO_COUNTRIES.map(x=>'<label class="global-video-check"><input type="checkbox" value="'+x[0]+'" '+(x[0]==='IN'?'checked':'')+'><span>'+x[1]+'</span></label>').join('');co.dataset.ready='1';}
-}
-function selectAllGlobalCountries(on){
-  document.querySelectorAll('#globalVideoCountries input[type=checkbox]').forEach(x=>x.checked=on);
-}
-function globalSelectedValues(id){return [...document.querySelectorAll('#'+id+' input[type=checkbox]:checked')].map(x=>x.value);}
-function openGlobalVideoInfo(){
-  alert('Global Campaign creates one tracked video job for each selected country × language combination. The server generates the localized script/prompt, creates the video with Gemini/Veo, stores the MP4 in external R2 storage, then uploads to the configured YouTube channel when YouTube is selected. Jobs remain individually trackable; API quotas, OAuth approval and provider limits still apply.');
-}
-async function queueGlobalVideoCampaign(){
-  if(!adminSession?.user||!supabaseClient)return alert('Admin session required.');
-  const productId=document.getElementById('globalVideoProduct')?.value;
-  const product=storeProducts.find(x=>String(x.id)===String(productId));
-  if(!product)return alert('Select a product.');
-  const languages=globalSelectedValues('globalVideoLanguages');
-  const countries=globalSelectedValues('globalVideoCountries');
-  if(!languages.length||!countries.length)return alert('Select at least one language and one country.');
-  if(languages.length*countries.length>120) {
-    if(!confirm('This will queue '+(languages.length*countries.length)+' video variants. Video generation can consume provider quota. Continue?'))return;
-  }
-  const campaign=(document.getElementById('globalVideoCampaign')?.value||('Global — '+product.name)).trim();
-  const platform=document.getElementById('globalVideoPlatform')?.value||'youtube';
-  const timezone=document.getElementById('globalVideoTimezone')?.value||'UTC';
-  const rows=[];
-  for(const country of countries) for(const language of languages){
-    const lname=(GLOBAL_VIDEO_LANGUAGES.find(x=>x[0]===language)||[language,language])[1];
-    const cname=(GLOBAL_VIDEO_COUNTRIES.find(x=>x[0]===country)||[country,country])[1];
-    rows.push({product_id:product.id,created_by:adminSession.user.id,title:product.name+' — '+lname+' — '+cname,description:product.short_description||product.description||'',generation_prompt:'LOCALIZE_AND_GENERATE',aspect_ratio:'9:16',resolution:'1080p',duration_seconds:8,generation_status:'queued',campaign_name:campaign,country_code:country,language_code:language,locale:language+'-'+country,target_platform:platform,scheduled_timezone:timezone});
-  }
-  const status=document.getElementById('globalVideoStatus'); if(status){status.style.display='block';status.textContent='Queueing '+rows.length+' localized video variants…';}
-  const {error}=await supabaseClient.from('video_jobs').insert(rows);
-  if(error){if(status)status.textContent='Queue failed: '+error.message;return;}
-  if(status)status.textContent='Queued '+rows.length+' variants successfully. Each country/language job will be tracked separately.';
-  if(typeof loadVideoJobs==='function')loadVideoJobs();
-}
-</script>
-
 </body>
 </html>
