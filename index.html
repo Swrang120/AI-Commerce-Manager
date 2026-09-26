@@ -2847,6 +2847,29 @@
           const {data:settings}=await supabaseClient.from('product_autopilot_settings').select('product_id,enabled,video_generation').eq('product_id',productId).maybeSingle();
           if(!settings) await supabaseClient.from('product_autopilot_settings').insert({product_id:productId,enabled:true,video_generation:true,updated_by:me.user.id});
           else if(settings.enabled!==true || settings.video_generation!==true) await supabaseClient.from('product_autopilot_settings').update({enabled:true,video_generation:true,updated_by:me.user.id,updated_at:new Date().toISOString()}).eq('product_id',productId);
+
+          // Queue one fresh AI video for the newly published product.
+          const since=new Date(Date.now()-24*60*60*1000).toISOString();
+          const {data:recentVideo}=await supabaseClient.from('video_jobs').select('id,generation_status').eq('product_id',productId).gte('created_at',since).in('generation_status',['queued','processing','published']).limit(1).maybeSingle();
+          if(!recentVideo){
+            const {data:job,error:jobError}=await supabaseClient.from('video_jobs').insert({
+              product_id:productId,
+              created_by:me.user.id,
+              title:(updated.name||'Product')+' — Product Video',
+              description:updated.description||updated.short_description||'Automated AI product video',
+              generation_prompt:'Create a premium e-commerce product promotion video using only verified product facts. Do not invent specifications, reviews, discounts, certifications, prices or performance claims. Vertical 9:16 social-commerce format with clear product presentation and E-commerce Shoping watermark.',
+              aspect_ratio:'9:16',
+              resolution:'1080p',
+              duration_seconds:8,
+              generation_status:'queued',
+              generation_provider:'google-veo-3.1'
+            }).select('id').single();
+            if(!jobError && job?.id){
+              // Start generation immediately; the scheduler will poll unfinished jobs.
+              const {error:invokeError}=await supabaseClient.functions.invoke('video-generator',{body:{job_id:job.id}});
+              if(invokeError) console.warn('Video generation queued but could not start immediately:',invokeError.message);
+            }
+          }
         }
         if(msg){msg.className='mb-3 p-3 rounded-xl text-xs bg-emerald-500/10 border border-emerald-500/20 text-emerald-300';msg.textContent=publish?'Product published. It can now appear on the customer website.':'Product unpublished from the customer website.';}
         await loadAdminProducts();
