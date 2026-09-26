@@ -133,6 +133,30 @@
       #customerView .customer-bottom-nav{display:flex;position:fixed;left:0;right:0;bottom:0;height:62px;background:rgba(255,255,255,.97);backdrop-filter:blur(14px);border-top:1px solid #e5e7eb;z-index:90;box-shadow:0 -8px 25px rgba(15,23,42,.08)}
     }
 
+   
+    /* ===== Premium customer storefront v2 ===== */
+    #customerView{font-family:'Plus Jakarta Sans',sans-serif;background:linear-gradient(180deg,#f8fafc 0,#fff 42%,#f8fafc 100%)}
+    #customerView .customer-store-strip{background:rgba(255,255,255,.94)!important;backdrop-filter:blur(16px)!important}
+    #customerView .customer-hero{position:relative;min-height:420px!important;background:radial-gradient(circle at 82% 18%,rgba(99,102,241,.18),transparent 28%),radial-gradient(circle at 18% 75%,rgba(14,165,233,.12),transparent 30%),linear-gradient(135deg,#eef2ff 0%,#fff 48%,#f5f3ff 100%)!important}
+    #customerView .customer-hero h1{font-size:clamp(2.1rem,5vw,4.1rem)!important;line-height:1.02!important;letter-spacing:-.045em!important}
+    #customerView #productsGrid>div{box-shadow:0 8px 26px rgba(15,23,42,.055)!important}
+    #customerView .customer-info-band{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:22px auto 8px;max-width:1280px;padding:0 16px}
+    #customerView .customer-info-card{background:#fff;border:1px solid #e8edf5;border-radius:16px;padding:17px;box-shadow:0 5px 18px rgba(15,23,42,.04)}
+    #customerView .customer-info-card h3{color:#111827;font-weight:800;font-size:13px;margin-top:8px}
+    #customerView .customer-info-card p{color:#64748b;font-size:11px;line-height:1.55;margin-top:4px}
+    #customerView .customer-about{max-width:1280px;margin:34px auto 22px;padding:0 16px}
+    #customerView .customer-about-box{background:linear-gradient(135deg,#111827,#1e1b4b);border-radius:22px;padding:28px;color:#fff;box-shadow:0 18px 45px rgba(15,23,42,.14)}
+    #customerView .customer-about-box h2{font-size:clamp(1.35rem,3vw,1.9rem);font-weight:800}
+    #customerView .customer-about-box p{color:#cbd5e1;font-size:12px;line-height:1.75;margin-top:9px;max-width:1000px}
+    #customerView .customer-footer{background:#0f172a;color:#cbd5e1;margin-top:34px;padding:34px 16px 92px}
+    #customerView .customer-footer-inner{max-width:1280px;margin:auto;display:grid;grid-template-columns:2fr 1fr 1fr 1.4fr;gap:28px}
+    #customerView .customer-footer h3{color:#fff;font-weight:800;font-size:13px;margin-bottom:10px}
+    #customerView .customer-footer p,#customerView .customer-footer button{font-size:11px;line-height:1.7;color:#94a3b8}
+    #customerView .customer-footer button:hover{color:#fff}
+    #customerView .customer-buy{background:linear-gradient(135deg,#4f46e5,#7c3aed)!important}
+    @media(max-width:767px){#customerView .customer-info-band{grid-template-columns:repeat(2,minmax(0,1fr));padding:0 12px}#customerView .customer-about{padding:0 12px}#customerView .customer-about-box{padding:22px 18px;border-radius:18px}#customerView .customer-footer-inner{grid-template-columns:1fr 1fr;gap:22px}}
+    @media(max-width:560px){#customerView .customer-footer-inner{grid-template-columns:1fr}}
+
   </style>
 </head>
 <body class="bg-dark-bg text-slate-100 min-h-screen flex flex-col selection:bg-brand-600 selection:text-white">
@@ -1569,9 +1593,9 @@
                   <span class="text-base font-extrabold text-white">₹${product.price.toLocaleString('en-IN')}</span>
                   <span class="text-xs text-slate-500 line-through ml-1">₹${product.compare_at_price.toLocaleString('en-IN')}</span>
                 </div>
-                <button onclick="quickAddToCart('${product.id}')" class="px-3 py-1.5 bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold rounded-lg shadow transition flex items-center space-x-1">
-                  <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                  <span>Add</span>
+                <button onclick="quickAddToCart('${product.id}')" class="customer-buy px-3 py-1.5 text-white text-xs font-semibold rounded-lg shadow transition flex items-center space-x-1">
+                  <i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i>
+                  <span>Buy Now</span>
                 </button>
               </div>
             </div>
@@ -1704,6 +1728,7 @@
       openCartDrawer();
     }
 
+    function buyNowProduct(productId){const product=storeProducts.find(p=>String(p.id)===String(productId));if(!product)return;cart=[];addToCart(product,1);openCheckoutModal();}
     function addToCart(product, quantity) {
       const existing = cart.find(item => item.product_id === product.id);
       if (existing) {
@@ -1732,6 +1757,8 @@
       updateCartUI();
     }
 
+    function removeCartItem(productId){cart=cart.filter(item=>String(item.product_id)!==String(productId));saveCart();updateCartUI();}
+    function syncCustomerSearch(query){const desktop=document.getElementById('searchInput');if(desktop)desktop.value=query;handleSearch(query);}
     function saveCart() {
       localStorage.setItem('nexus_cart', JSON.stringify(cart));
       // Sync guest cart to Supabase (Rule 33)
@@ -1789,7 +1816,8 @@
             </div>
           </div>
           <div class="flex items-center space-x-2">
-            <button onclick="updateCartItemQty('${item.product_id}', -1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-white">-</button>
+            <button onclick="updateCartItemQty('${item.product_id}', -1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-white">−</button>
+            <button onclick="removeCartItem('${item.product_id}')" title="Remove item" class="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 flex items-center justify-center"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
             <span class="font-bold text-white text-xs">${item.quantity}</span>
             <button onclick="updateCartItemQty('${item.product_id}', 1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-white">+</button>
           </div>
@@ -3339,6 +3367,7 @@
       if(isAdminMode){loadVideoJobs();loadAdminVideoLibrary();}
     };
 
-  </script>
+  function openInfoPage(type){const titles={privacy:'Privacy Policy',terms:'Terms & Conditions',shipping:'Shipping & Delivery'};const texts={privacy:'We collect only information needed to operate customer features such as account access, profile details, delivery address, cart and order support. Profile information saved locally on your device remains there until you change or remove it. Information sent to our backend may be used to operate store features and customer support. Please do not share unnecessary sensitive information.',terms:'By using E-commerce Shoping, customers are expected to provide accurate information, use the website lawfully and review product, price, stock and delivery information before placing an order. Store content, availability and features may change.',shipping:'Delivery availability, charges and estimated timing can vary by product, location, supplier and order conditions. Customers should keep their delivery address and contact information accurate. Tracking information, when available, can be viewed from the customer account or order area.'};const modal=document.createElement('div');modal.className='fixed inset-0 z-[120] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4';modal.innerHTML='<div class="bg-white rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-auto shadow-2xl"><div class="p-5 border-b flex items-center justify-between"><h2 class="text-lg font-extrabold text-slate-900">'+titles[type]+'</h2><button onclick="this.closest(\'.fixed\').remove()" class="p-2 rounded-lg bg-slate-100 text-slate-600">✕</button></div><div class="p-5 text-sm leading-7 text-slate-600">'+texts[type]+'</div></div>';document.body.appendChild(modal);}
+</script>
 </body>
 </html>
