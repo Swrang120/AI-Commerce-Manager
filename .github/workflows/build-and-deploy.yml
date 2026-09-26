@@ -1,5 +1,5 @@
-name: Build Android APK and Deploy Web Store
-# Pages deployment is intentionally independent from Android build success.
+name: Deploy Website to GitHub Pages
+# Website-only deployment. Android/APK build is disabled for now.
 
 on:
   push:
@@ -20,7 +20,7 @@ concurrency:
 jobs:
 
   deploy-web:
-    name: Deploy Web Storefront to GitHub Pages
+    name: Deploy E-commerce Shoping Website to GitHub Pages
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     environment:
