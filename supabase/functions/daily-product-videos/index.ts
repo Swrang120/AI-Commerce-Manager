@@ -141,6 +141,10 @@ async function pollAndPublish(job: any) {
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json({ error: "POST required" }, 405);
   try {
+    const auth = req.headers.get("Authorization");
+    const token = auth?.replace(/^Bearer\s+/i, "");
+    if (!serviceRoleKey || token !== serviceRoleKey) return json({ error: "Service authorization required" }, 401);
+
     if (!geminiKey || !r2AccountId || !r2AccessKeyId || !r2SecretAccessKey || !r2PublicBaseUrl) {
       return json({ error: "Gemini/R2 storage secrets are not configured" }, 503);
     }
@@ -170,7 +174,7 @@ Deno.serve(async (req: Request) => {
 
     // Global campaign queue: process one queued country/language variant per run.
     const { data: globalQueue } = await admin.from("video_jobs")
-      .select("*,products(id,name,description,short_description,price,images)")
+      .select("*,products(id,name,description,short_description,selling_price,images)")
       .eq("generation_status","queued")
       .not("country_code","is",null)
       .not("language_code","is",null)
@@ -190,7 +194,7 @@ Deno.serve(async (req: Request) => {
           "Vertical 9:16 social-commerce video with appropriate local audio.",
           "Persistent watermark: "+BRAND+", bottom-right.",
           "Product name: "+product.name,
-          "Current price: "+String(product.price??""),
+          "Current price: "+String(product.selling_price??""),
           "Description: "+String(product.description??product.short_description??"")
         ].join("\n");
         const operation=await startVeo(prompt,await productImage(product));
@@ -225,7 +229,7 @@ Deno.serve(async (req: Request) => {
       "Include a subtle persistent visible watermark: " + BRAND + ", bottom-right.",
       "Product name: " + product.name,
       "Description: " + (product.description ?? product.short_description ?? ""),
-      "Current price: " + String(product.price ?? "")
+      "Current price: " + String(product.selling_price ?? "")
     ].join("\n");
 
     const { data: job, error: insertError } = await admin.from("video_jobs").insert({
